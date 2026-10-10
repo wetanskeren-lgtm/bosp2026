@@ -534,10 +534,26 @@ body{background:var(--bg)!important;color:var(--text);}
 .login-box input { display:block; margin:10px 0; text-align:left; }
 .login-box button { display:block; }
 #auth-register input, #auth-reset input { width:100%; }
+
+/* Status koneksi dan sinkronisasi Firebase */
+#cloud-sync-status{
+ position:fixed;right:16px;bottom:16px;z-index:5000;max-width:min(420px,calc(100vw - 32px));
+ padding:10px 14px;border-radius:12px;background:#173b63;color:#fff;
+ box-shadow:0 8px 24px rgba(0,0,0,.22);font-size:12px;line-height:1.4;
+ display:flex;align-items:center;gap:9px;border:1px solid rgba(255,255,255,.2)
+}
+#cloud-sync-status .cloud-dot{width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:#20c777}
+#cloud-sync-status[data-state="offline"] .cloud-dot{background:#ffb020}
+#cloud-sync-status[data-state="error"] .cloud-dot{background:#ff6262}
+#cloud-sync-status small{display:block;opacity:.82;margin-top:2px}
+
 </style>
 <base target="_blank">
 </head>
 <body>
+<div id="cloud-sync-status" data-state="ready" role="status" aria-live="polite" style="display:none">
+  <span class="cloud-dot"></span><div><b id="cloud-sync-title">Memeriksa koneksi...</b><small id="cloud-sync-detail">Data tersimpan di akun sekolah.</small></div>
+</div>
 
 <!-- LOGIN / REGISTRASI SEKOLAH BERBASIS FIREBASE -->
 <div id="login-screen">
@@ -553,12 +569,14 @@ body{background:var(--bg)!important;color:var(--text);}
       <button type="button" style="margin-top:8px;background:#7f8c8d" onclick="showAuthPanel('reset')">Lupa / Ganti Password</button>
     </div>
     <div id="auth-register" style="display:none;text-align:left;">
+      <p style="font-size:10pt;color:#fff3cd;background:rgba(0,0,0,.18);padding:9px;border-radius:8px;line-height:1.45;">Registrasi hanya untuk sekolah yang mendapat izin. <b>Minta kode khusus kepada Admin Pusat</b>, lalu masukkan kode tersebut di bawah.</p>
+      <input id="reg-code" type="password" autocomplete="off" placeholder="Kode khusus dari Admin Pusat" aria-label="Kode khusus dari Admin Pusat">
       <input id="reg-npsn" inputmode="numeric" maxlength="8" placeholder="NPSN (8 digit)">
       <input id="reg-school" placeholder="Nama Sekolah" autocomplete="organization">
       <input id="reg-email" type="email" placeholder="Email aktif untuk pemulihan password" autocomplete="email">
       <input id="reg-password" type="password" placeholder="Buat password (minimal 6 karakter)" autocomplete="new-password">
       <input id="reg-password2" type="password" placeholder="Ulangi password" autocomplete="new-password">
-      <button onclick="registrasiSekolah()">Daftarkan Sekolah</button>
+      <button id="btn-register" onclick="registrasiSekolah()">Daftarkan Sekolah</button>
       <button type="button" style="margin-top:8px;background:#7f8c8d" onclick="showAuthPanel('login')">Kembali ke Login</button>
     </div>
     <div id="auth-reset" style="display:none;text-align:left;">
@@ -658,7 +676,7 @@ body{background:var(--bg)!important;color:var(--text);}
         
 
         <div id="sec-rekening" class="form-section-title">2. MASTER DATA REKENING</div>
-        <div style="font-size:8pt; color:#bdc3c7; margin-bottom:6px;">Data rekening tersimpan otomatis di lokal browser.</div>
+        <div style="font-size:8pt; color:#bdc3c7; margin-bottom:6px;">Data rekening tersimpan otomatis di browser dan disinkronkan ke Firebase.</div>
         <div id="rekening-inputs"></div>
         <button class="btn btn-green btn-small" onclick="addRekeningRow()" style="margin-top:4px;">+ Tambah Rekening</button>
 
@@ -1759,38 +1777,63 @@ body{background:var(--bg)!important;color:var(--text);}
     function schoolEmail(npsn){ return cleanNpsn(npsn); } // fungsi lama tidak dipakai untuk autentikasi email
 
     async function registrasiSekolah() {
+      let createdUser = null;
       try {
         if(!firebaseAuth || !firebaseDb) throw new Error('Firebase belum siap. Periksa konfigurasi dan koneksi internet.');
+        const kode=document.getElementById('reg-code').value.trim().toUpperCase();
         const npsn=cleanNpsn(document.getElementById('reg-npsn').value);
         const nama=document.getElementById('reg-school').value.trim();
         const email=document.getElementById('reg-email').value.trim().toLowerCase();
         const pass=document.getElementById('reg-password').value;
         const pass2=document.getElementById('reg-password2').value;
+        if(!kode) throw new Error('Kode khusus wajib diisi. Silakan minta kode kepada Admin Pusat.');
         if(!/^\d{8}$/.test(npsn)) throw new Error('NPSN harus terdiri dari 8 angka.');
         if(!nama) throw new Error('Nama sekolah wajib diisi.');
         if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Masukkan email aktif yang benar untuk pemulihan password.');
         if(pass.length<6) throw new Error('Password minimal 6 karakter.');
         if(pass!==pass2) throw new Error('Konfirmasi password tidak sama.');
-        authMessage('Memproses registrasi...');
-        const existing=await firebaseDb.collection('schoolAccounts').doc(npsn).get();
-        if(existing.exists) throw new Error('NPSN ini sudah terdaftar. Silakan login atau hubungi pengelola.');
-        const cred=await firebaseAuth.createUserWithEmailAndPassword(email,pass);
+        const btn=document.getElementById('btn-register');
+        if(btn) { btn.disabled=true; btn.textContent='Memproses registrasi...'; }
+        authMessage('Memeriksa izin registrasi dan kuota sekolah...');
+        const schoolRef=firebaseDb.collection('schoolAccounts').doc(npsn);
+        const existing=await schoolRef.get();
+        if(existing.exists) throw new Error('NPSN ini sudah terdaftar. Silakan login atau hubungi Admin Pusat.');
+        // Kode dan batas 40 sekolah diverifikasi ulang oleh Firestore Security Rules.
+        // Dokumen pengaturan admin tidak perlu dibaca oleh browser.
+        createdUser=await firebaseAuth.createUserWithEmailAndPassword(email,pass);
+        const batch=firebaseDb.batch();
+        batch.set(schoolRef,{
+          uid:createdUser.user.uid, npsn, namaSekolah:nama,
+          kodeRegistrasi:kode,
+          createdAt:firebase.firestore.FieldValue.serverTimestamp()
+        });
+        batch.update(firebaseDb.collection('adminSettings').doc('registrasi'),{
+          terpakai:firebase.firestore.FieldValue.increment(1),
+          lastNpsn:npsn
+        });
         try {
-          await firebaseDb.collection('schoolAccounts').doc(npsn).set({
-            uid:cred.user.uid, npsn, namaSekolah:nama,
-            createdAt:firebase.firestore.FieldValue.serverTimestamp()
-          });
+          await batch.commit();
         } catch(err) {
-          await cred.user.delete().catch(()=>{});
+          await createdUser.user.delete().catch(()=>{});
+          createdUser=null;
+          if(err && (err.code==='permission-denied' || err.code==='firestore/permission-denied')) {
+            throw new Error('Kode khusus salah/tidak aktif, kuota 40 sekolah sudah penuh, atau pengaturan Admin Pusat belum dipasang. Minta kode terbaru kepada Admin Pusat.');
+          }
           throw err;
         }
-        await cred.user.sendEmailVerification().catch(()=>{});
+        await createdUser.user.sendEmailVerification().catch(()=>{});
         document.getElementById('login-npsn').value=npsn;
         document.getElementById('login-email').value=email;
         document.getElementById('login-password').value=pass;
+        document.getElementById('reg-code').value='';
         authMessage('Registrasi berhasil. Jika email verifikasi dikirim, silakan periksa email. Anda dapat masuk sekarang.');
         showAuthPanel('login');
-      } catch(e) { authMessage(authErrorText(e),true); }
+      } catch(e) {
+        authMessage(authErrorText(e),true);
+      } finally {
+        const btn=document.getElementById('btn-register');
+        if(btn) { btn.disabled=false; btn.textContent='Daftarkan Sekolah'; }
+      }
     }
 
     function authErrorText(e) {
@@ -1827,7 +1870,27 @@ body{background:var(--bg)!important;color:var(--text);}
         if(!snap.exists) { await firebaseAuth.signOut(); throw new Error('NPSN belum terdaftar.'); }
         const profile=snap.data();
         if(profile.uid!==cred.user.uid || String(profile.npsn)!==npsn) { await firebaseAuth.signOut(); throw new Error('NPSN tidak cocok dengan akun yang masuk.'); }
+        // Pisahkan data lokal berdasarkan akun sekolah sebelum mengambil data cloud.
+        // Jika ini akun pertama di browser yang sudah memiliki data lama, minta konfirmasi
+        // agar data lama tidak tanpa sengaja masuk ke akun sekolah yang salah.
+        const lastSchool = localStorage.getItem('__bosp_last_school_npsn') || '';
+        const legacyKeys = [];
+        for (let i=0; i<localStorage.length; i++) {
+          const k=localStorage.key(i);
+          if (k && /^si_/.test(k)) legacyKeys.push(k);
+        }
+        if (lastSchool && lastSchool !== npsn) {
+          legacyKeys.forEach(k=>localStorage.removeItem(k));
+        } else if (!lastSchool && legacyKeys.length) {
+          const ok = confirm('Browser ini memiliki data lokal lama. Apakah data tersebut memang milik sekolah dengan NPSN '+npsn+'?\n\nPilih OK hanya jika data lama milik sekolah ini. Jika bukan, pilih Batal agar data tidak tercampur.');
+          if (!ok) {
+            await firebaseAuth.signOut();
+            throw new Error('Login dibatalkan agar data lokal sekolah lain tidak tercampur. Gunakan browser bersih atau login akun pemilik data lama terlebih dahulu.');
+          }
+        }
+        localStorage.setItem('__bosp_last_school_npsn', npsn);
         currentSchoolUser={uid:cred.user.uid,npsn,namaSekolah:profile.namaSekolah||''};
+        setCloudStatus('loading','Mengambil data sekolah...','Data akun '+npsn+' sedang dimuat dari Firebase.');
         await loadSchoolCloudData();
         const schoolName=document.getElementById('in_nama_sekolah');
         if(schoolName && profile.namaSekolah) {
@@ -1857,42 +1920,98 @@ body{background:var(--bg)!important;color:var(--text);}
       } catch(e) { authMessage(authErrorText(e),true); }
     }
 
-    // Sinkronisasi key data aplikasi per sekolah ke Firestore.
-    // Foto/logo sengaja dikecualikan karena ukuran gambar dapat melampaui batas dokumen.
-    const CLOUD_EXCLUDED_KEYS = /^(si_logo_data|si_foto_.*)$/;
-    let cloudSyncReady=false, cloudWriteTimer=null;
+    // ===== CLOUD SYNC PER SEKOLAH =====
+    // Setiap NPSN memiliki koleksi appData sendiri. Semua data si_* termasuk logo/foto
+    // dicoba disimpan ke Firestore per dokumen. Foto berukuran besar mungkin perlu
+    // Firebase Storage jika melewati batas ukuran dokumen Firestore.
+    const CLOUD_EXCLUDED_KEYS = /^(?:__bosp_last_school_npsn|__bosp_.*)$/;
+    let cloudSyncReady=false;
+    const cloudWriteTimers = new Map();
+    const cloudPendingKeys = new Set();
+    let cloudSyncErrors = 0;
+
+    function setCloudStatus(state,title,detail) {
+      const box=document.getElementById('cloud-sync-status');
+      const t=document.getElementById('cloud-sync-title');
+      const d=document.getElementById('cloud-sync-detail');
+      if(!box || !t || !d) return;
+      box.dataset.state=state;
+      t.textContent=title;
+      d.textContent=detail || '';
+      box.style.display=currentSchoolUser ? 'flex' : 'none';
+    }
+    function refreshCloudStatus() {
+      if(!currentSchoolUser) return;
+      if(!navigator.onLine) {
+        setCloudStatus('offline','Offline — perubahan disimpan sementara','Saat internet kembali, Firebase akan melanjutkan sinkronisasi otomatis.');
+      } else if(cloudSyncErrors) {
+        setCloudStatus('error','Sinkronisasi perlu diperiksa',cloudSyncErrors+' perubahan belum terkonfirmasi. Periksa koneksi dan aturan Firestore.');
+      } else if(cloudPendingKeys.size) {
+        setCloudStatus('loading','Menyinkronkan data...','Menunggu '+cloudPendingKeys.size+' perubahan tersimpan ke Firebase.');
+      } else {
+        setCloudStatus('ready','Online — data tersinkron','Akun sekolah NPSN '+currentSchoolUser.npsn+' • data tersimpan di Firebase.');
+      }
+    }
+
     async function loadSchoolCloudData() {
       if(!currentSchoolUser) return;
+      cloudSyncReady=false;
       const ref=firebaseDb.collection('schoolAccounts').doc(currentSchoolUser.npsn).collection('appData');
-      const snap=await ref.get();
+      let snap;
+      try {
+        snap=await ref.get();
+      } catch(err) {
+        setCloudStatus('error','Data cloud belum bisa dibaca',authErrorText(err));
+        throw new Error('Data sekolah belum dapat diambil dari Firebase. Pastikan internet aktif dan Firestore Rules sudah dipasang. '+(err.message||''));
+      }
       const remoteKeys=new Set();
       snap.forEach(doc=>{
         remoteKeys.add(doc.id);
         const data=doc.data();
         if(data && Object.prototype.hasOwnProperty.call(data,'value')) {
-          try { localStorage.setItem(doc.id, JSON.stringify(data.value)); } catch(e) {}
+          try { localStorage.setItem(doc.id, JSON.stringify(data.value)); }
+          catch(e) { console.warn('Tidak dapat memuat data lokal:',doc.id,e); }
         }
       });
-      // Unggah data lokal yang belum ada di cloud; cloud menjadi sumber utama jika key sudah ada.
+
+      // Migrasi data lama hanya untuk akun yang sedang aktif, dan hanya jika key
+      // tersebut belum ada di cloud. Data akun lain dibersihkan saat pergantian NPSN.
       const batch=firebaseDb.batch();
       let count=0;
       for(let i=0;i<localStorage.length;i++){
         const key=localStorage.key(i);
         if(!key || CLOUD_EXCLUDED_KEYS.test(key) || remoteKeys.has(key)) continue;
+        // Jangan mengunggah key internal browser.
+        if(!/^si_/.test(key)) continue;
         try {
-          const value=JSON.parse(localStorage.getItem(key));
+          const raw=localStorage.getItem(key);
+          if(raw===null) continue;
+          const value=JSON.parse(raw);
           batch.set(ref.doc(key),{value,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+          remoteKeys.add(key);
           count++;
           if(count>=400) break;
-        } catch(e) {}
+        } catch(e) {
+          console.warn('Lewati migrasi data lokal:',key,e);
+        }
       }
-      if(count) await batch.commit();
+      if(count) {
+        setCloudStatus('loading','Menyimpan data awal...','Memindahkan '+count+' bagian data ke Firebase.');
+        await batch.commit();
+      }
       cloudSyncReady=true;
+      cloudSyncErrors=0;
+      refreshCloudStatus();
     }
+
     function scheduleCloudSave(key,value,remove=false) {
       if(!currentSchoolUser || !cloudSyncReady || !key || CLOUD_EXCLUDED_KEYS.test(key)) return;
-      clearTimeout(cloudWriteTimer);
-      cloudWriteTimer=setTimeout(async()=>{
+      if(!/^si_/.test(key)) return;
+      if(cloudWriteTimers.has(key)) clearTimeout(cloudWriteTimers.get(key));
+      cloudPendingKeys.add(key);
+      refreshCloudStatus();
+      const timer=setTimeout(async()=>{
+        cloudWriteTimers.delete(key);
         try {
           const doc=firebaseDb.collection('schoolAccounts').doc(currentSchoolUser.npsn).collection('appData').doc(key);
           if(remove) await doc.delete();
@@ -1901,10 +2020,23 @@ body{background:var(--bg)!important;color:var(--text);}
             try { parsed=JSON.parse(value); } catch(e) { parsed=value; }
             await doc.set({value:parsed,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
           }
-        } catch(e) { console.error('Gagal sinkronisasi cloud:',e); }
-      },500);
+          cloudPendingKeys.delete(key);
+          cloudSyncErrors=0;
+        } catch(e) {
+          // Firestore persistence queues writes while offline; real rule/size errors are surfaced.
+          console.error('Gagal sinkronisasi cloud:',key,e);
+          cloudSyncErrors++;
+          cloudPendingKeys.delete(key);
+          if(e && (e.code==='permission-denied' || e.code==='invalid-argument' || e.code==='resource-exhausted')) {
+            setCloudStatus('error','Gagal menyimpan ke Firebase',key+': '+(e.message||e.code)+'. Data lokal masih ada di browser ini.');
+          }
+        }
+        refreshCloudStatus();
+      },450);
+      cloudWriteTimers.set(key,timer);
     }
-    // Pantau penyimpanan lokal agar perubahan yang dibuat oleh fitur lama tetap tersinkron.
+
+    // Pantau perubahan dari fungsi lama yang masih menyimpan data melalui localStorage.
     const originalLocalSetItem=Storage.prototype.setItem;
     Storage.prototype.setItem=function(key,value){
       originalLocalSetItem.call(this,key,value);
@@ -1915,6 +2047,21 @@ body{background:var(--bg)!important;color:var(--text);}
       originalLocalRemoveItem.call(this,key);
       if(this===window.localStorage) scheduleCloudSave(String(key),'',true);
     };
+    window.addEventListener('online',function(){
+      if(currentSchoolUser) {
+        setCloudStatus('loading','Internet kembali','Firebase sedang melanjutkan sinkronisasi data.');
+        // Ulangi penyimpanan key lokal setelah koneksi pulih.
+        cloudSyncErrors=0;
+        if(cloudSyncReady) {
+          for(let i=0;i<localStorage.length;i++){
+            const k=localStorage.key(i);
+            if(k && /^si_/.test(k) && !CLOUD_EXCLUDED_KEYS.test(k)) scheduleCloudSave(k,localStorage.getItem(k),false);
+          }
+        }
+        refreshCloudStatus();
+      }
+    });
+    window.addEventListener('offline',function(){ if(currentSchoolUser) refreshCloudStatus(); });
 
     // ========== FUNGSI LOGIN ==========
     function checkPassword() { return loginSekolah(); }
@@ -1983,7 +2130,7 @@ body{background:var(--bg)!important;color:var(--text);}
 
     function saveToLocal() {
         autoSave();
-        showStatus('✅ Semua data berhasil disimpan ke lokal browser!', false);
+        showStatus('✅ Data disimpan di browser dan antrean sinkronisasi Firebase diperbarui.', false);
     }
 
     function loadFormData() {
@@ -2012,13 +2159,14 @@ body{background:var(--bg)!important;color:var(--text);}
     // ========== LOGO ==========
     function previewLogo(input) {
         if (input.files && input.files[0]) {
-            var reader = new FileReader();
-            reader.onload = function(e) {
-                logoDataUri = e.target.result;
-                localStorage.setItem('si_logo_data', logoDataUri);
+            compressImage(input.files[0], function(dataUri) {
+                if (!dataUri) { showStatus('Logo gagal diproses. Coba gunakan file gambar JPG/PNG.', true); return; }
+                logoDataUri = dataUri;
+                try { localStorage.setItem('si_logo_data', logoDataUri); }
+                catch (e) { showStatus('Logo terlalu besar untuk penyimpanan browser. Coba gambar lain.', true); return; }
                 document.querySelectorAll('.doc-logo').forEach(function(im){ im.src = logoDataUri; });
-            };
-            reader.readAsDataURL(input.files[0]);
+                showStatus('Logo otomatis diperkecil agar hemat penyimpanan.', false);
+            });
         }
     }
 
@@ -2934,35 +3082,84 @@ body{background:var(--bg)!important;color:var(--text);}
         w.document.close();
     }
 
-    // ========== UPLOAD FOTO ==========
+    // ========== UPLOAD FOTO OTOMATIS DIPERKECIL ==========
+    // Gambar disimpan sebagai JPEG, sisi terpanjang maksimal 800 px dan target sekitar 120 KB.
+    // Ini mengurangi pemakaian localStorage dan ukuran data yang dikirim ke Firestore.
+    function compressImageSource(source, cb) {
+        const img = new Image();
+        img.onload = function() {
+            try {
+                let maxSide = 800;
+                let scale = Math.min(1, maxSide / Math.max(img.naturalWidth || img.width, img.naturalHeight || img.height));
+                let canvas = document.createElement('canvas');
+                let dataUri = '';
+                // Turunkan resolusi/quality bertahap sampai ukurannya kecil.
+                for (let pass = 0; pass < 8; pass++) {
+                    canvas.width = Math.max(1, Math.round((img.naturalWidth || img.width) * scale));
+                    canvas.height = Math.max(1, Math.round((img.naturalHeight || img.height) * scale));
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    const quality = pass < 3 ? 0.58 : (pass < 5 ? 0.48 : 0.38);
+                    dataUri = canvas.toDataURL('image/jpeg', quality);
+                    // Data URL ukuran perkiraan byte: karakter base64 * 3/4.
+                    if ((dataUri.length * 0.75) <= 120 * 1024) break;
+                    scale *= 0.78;
+                }
+                canvas.width = 1; canvas.height = 1;
+                cb(dataUri);
+            } catch (err) { cb(null); }
+        };
+        img.onerror = function() { cb(null); };
+        img.src = source;
+    }
     function compressImage(file, cb) {
         const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                const maxW = 900;
-                const scale = Math.min(1, maxW / img.width);
-                canvas.width = Math.round(img.width * scale);
-                canvas.height = Math.round(img.height * scale);
-                canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-                cb(canvas.toDataURL('image/jpeg', 0.7));
-            };
-            img.src = e.target.result;
-        };
+        reader.onload = function(e) { compressImageSource(e.target.result, cb); };
+        reader.onerror = function() { cb(null); };
         reader.readAsDataURL(file);
     }
     function handleFotoUpload(input, key, previewId) {
         if (input.files && input.files[0]) {
-            compressImage(input.files[0], function(dataUri) {
+            const file = input.files[0];
+            if (!file.type || !file.type.startsWith('image/')) {
+                showStatus('Pilih file gambar JPG, PNG, atau WebP.', true); input.value=''; return;
+            }
+            compressImage(file, function(dataUri) {
+                if (!dataUri) { showStatus('Foto gagal diproses. Coba pilih gambar lain.', true); return; }
                 try { localStorage.setItem(key, dataUri); }
                 catch (e) { showStatus('Penyimpanan penuh! Hapus beberapa foto lama.', true); return; }
                 const p = document.getElementById(previewId);
                 if (p) { p.src = dataUri; p.style.display = 'block'; }
-                showStatus('📷 Foto tersimpan.', false);
+                showStatus('📷 Foto otomatis diperkecil (maks. 800 px, target ±120 KB) dan tersimpan.', false);
                 updateSurat();
+                input.value = '';
             });
         }
+    }
+    // Foto/logo lama yang ukurannya besar ikut diperkecil saat aplikasi dibuka.
+    function shrinkExistingImages() {
+        const keys = ['si_logo_data','si_foto_nota','si_foto_pb1'];
+        for (let i = 1; i <= 6; i++) keys.push('si_foto_' + i);
+        keys.forEach(function(key) {
+            const oldData = localStorage.getItem(key);
+            if (!oldData || !oldData.startsWith('data:image/') || oldData.length < 160 * 1024) return;
+            compressImageSource(oldData, function(smaller) {
+                if (!smaller || smaller.length >= oldData.length) return;
+                try {
+                    localStorage.setItem(key, smaller);
+                    if (key === 'si_logo_data') {
+                        logoDataUri = smaller;
+                        document.querySelectorAll('.doc-logo').forEach(function(im){ im.src = smaller; });
+                    } else {
+                        const previewId = key === 'si_foto_nota' ? 'prev_nota' : key === 'si_foto_pb1' ? 'prev_pb1' : 'prev_foto_' + key.replace('si_foto_', '');
+                        const preview = document.getElementById(previewId);
+                        if (preview) preview.src = smaller;
+                    }
+                } catch (e) { /* Data lama tetap dipertahankan jika penyimpanan penuh. */ }
+            });
+        });
     }
     function clearFoto(key, previewId) {
         if (!confirm('Hapus foto ini?')) return;
@@ -3126,15 +3323,28 @@ body{background:var(--bg)!important;color:var(--text);}
         document.querySelectorAll('.side-link').forEach(function(x){x.classList.remove('active');});
         if (btn) btn.classList.add('active');
     }
-    function logoutApp() {
-        if (confirm('Keluar dari aplikasi? Data lokal tetap tersimpan.')) {
-            const ls = document.getElementById('login-screen');
-            const app = document.getElementById('app-wrapper');
-            if (app) app.style.display='none';
-            if (ls) ls.style.display='flex';
-            const pass = document.getElementById('password-input');
-            if (pass) { pass.value=''; pass.focus(); }
-        }
+    async function logoutApp() {
+        if (!confirm('Keluar dari akun sekolah ini? Data sudah/akan disinkronkan ke Firebase saat koneksi tersedia.')) return;
+        try {
+          // Pastikan data formulir terbaru masuk antrean penyimpanan lokal/Firebase.
+          if (typeof autoSave==='function') autoSave();
+          if (typeof saveBelanjaLocal==='function') saveBelanjaLocal();
+          if (typeof saveRekening==='function') saveRekening();
+          if (typeof saveKuasaData==='function') saveKuasaData();
+          // Beri waktu debounce singkat sebelum sign-out; antrean offline Firestore tetap persisten.
+          await new Promise(resolve=>setTimeout(resolve,550));
+          if(firebaseAuth) await firebaseAuth.signOut();
+        } catch(e) { console.warn('Sign out:',e); }
+        cloudSyncReady=false;
+        currentSchoolUser=null;
+        const status=document.getElementById('cloud-sync-status');
+        if(status) status.style.display='none';
+        const ls=document.getElementById('login-screen');
+        const app=document.getElementById('app-wrapper');
+        if(app) app.style.display='none';
+        if(ls) ls.style.display='flex';
+        const pass=document.getElementById('login-password');
+        if(pass) { pass.value=''; pass.focus(); }
     }
     function updateDashboardSchoolName(){
         const input=document.getElementById('in_nama_sekolah');
@@ -3151,6 +3361,7 @@ body{background:var(--bg)!important;color:var(--text);}
         loadLogo();
         loadKuasaData();
         loadFotoPreviews();
+        shrinkExistingImages();
         updatePeriodFilter();
         updatePeriodIndicator();
         updateSurat();
