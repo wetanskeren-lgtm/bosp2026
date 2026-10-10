@@ -1,0 +1,3164 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Generator SI + Surat Kuasa + Dokumen PBJ - Dinamis</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; 
+            line-height: 1.15; font-size: 12pt; margin: 0; padding: 0;
+            background-color: #f4f7f6;
+        }
+
+        /* CSS HALAMAN LOGIN */
+        #login-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #2c3e50; display: flex; justify-content: center; align-items: center;
+            z-index: 9999; color: white; flex-direction: column;
+        }
+        .login-box {
+            background: #34495e; padding: 40px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            text-align: center; width: 350px;
+        }
+        .login-box h2 { margin-top: 0; color: #f1c40f; }
+        .login-box input {
+            width: 100%; padding: 12px; margin: 15px 0; border: none; border-radius: 4px;
+            font-size: 14px; text-align: center;
+        }
+        .login-box button {
+            width: 100%; padding: 12px; background: #27ae60; color: white; border: none;
+            border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px;
+        }
+        .login-box button:hover { background: #2ecc71; }
+        .login-error { color: #e74c3c; margin-top: 10px; font-size: 12px; display: none; }
+
+        /* CSS APLIKASI */
+        .container { width: 790px; margin: 20px auto; padding: 40px; background: #fff; box-shadow: 0 0 15px rgba(0,0,0,0.2); text-align: justify; }
+
+        .header { text-align: center; border-bottom: 4px double #000; padding-bottom: 10px; margin-bottom: 20px; position: relative; min-height: 100px; }
+        .logo-container { position: absolute; left: 0; top: 0; width: 90px; height: 110px; display: flex; align-items: center; justify-content: center; }
+        .logo-container img { max-width: 100%; max-height: 100%; width: 100%; height: 100%; object-fit: contain; display: block; }
+        .header-text { margin-left: 90px; }
+        .header h3 { margin: 0; font-size: 14pt; font-weight: bold; }
+        .header h2 { margin: 0; font-size: 16pt; font-weight: bold; }
+        .header p { margin: 5px 0 0 0; font-size: 9pt; font-style: italic; }
+
+        .document-title { text-align: center; font-weight: bold; text-decoration: underline; font-size: 14pt; margin: 25px 0; }
+
+        .meta-section { display: flex; justify-content: space-between; width: 100%; margin-bottom: 20px; }
+        .meta-left { width: 55%; }
+        .meta-right { width: 40%; text-align: right; }
+        .table-meta { width: 100%; border-collapse: collapse; }
+        .table-meta td { vertical-align: top; padding: 1px 0; }
+
+        .identity-table { margin-left: 20px; width: 95%; border-collapse: collapse; margin-top: 10px; }
+        .identity-table td { padding: 2px 0; vertical-align: top; }
+
+        .data-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 10pt; }
+        .data-table th, .data-table td { border: 1px solid black; padding: 5px; text-align: center; }
+        .data-table th { background-color: #f2f2f2; }
+
+        .sig-container { width: 100%; margin-top: 50px; display: flex; justify-content: space-between; text-align: center; }
+        .sig-box { width: 45%; }
+
+        .kuasa-title { text-align: center; font-weight: bold; font-size: 14pt; margin-bottom: 5px; }
+        .kuasa-nomor { text-align: center; font-size: 11pt; margin-bottom: 25px; }
+        .kuasa-table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+        .kuasa-table td { padding: 3px 0; vertical-align: top; font-size: 11pt; }
+        .kuasa-table td:first-child { width: 100px; }
+        .kuasa-table td .line { border-bottom: 1px solid #000; display: inline-block; min-width: 300px; }
+        .kuasa-clause { margin: 12px 0; text-align: justify; font-size: 11pt; line-height: 1.5; }
+        .kuasa-clause b { text-transform: uppercase; }
+        .kuasa-footer { margin-top: 30px; text-align: center; font-size: 11pt; }
+        .kuasa-sig { width: 100%; margin-top: 40px; display: flex; justify-content: space-between; text-align: center; }
+        .kuasa-sig-box { width: 45%; font-size: 11pt; }
+
+        #editor-panel { 
+            background: #2c3e50; color: white; padding: 25px; 
+            position: sticky; top: 0; z-index: 999; 
+            display: flex; flex-direction: column; gap: 10px;
+            max-height: 95vh; overflow-y: auto;
+        }
+        .form-section-title { border-bottom: 1px solid #7f8c8d; padding-bottom: 5px; margin-top: 15px; font-weight: bold; color: #f1c40f; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+        .input-group { display: flex; flex-direction: column; gap: 2px; }
+        .input-group label { font-size: 7.5pt; font-weight: bold; color: #bdc3c7; }
+        .input-group input, .input-group textarea, .input-group select { padding: 5px; border-radius: 4px; border: none; font-size: 8.5pt; }
+        .input-group textarea { resize: vertical; min-height: 60px; }
+
+        .belanja-row { display: grid; grid-template-columns: 30px 2fr 2fr 1fr 1fr 1.5fr 40px; gap: 5px; margin-bottom: 6px; background: #34495e; padding: 8px; border-radius: 4px; align-items: center; }
+        .belanja-row input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+        .belanja-row input[type="text"], .belanja-row input[type="number"], .belanja-row select { padding: 4px; border-radius: 3px; border: none; font-size: 8.5pt; }
+        .belanja-row input[type="number"] { text-align: right; }
+        .belanja-row .pajak-input { background: #fdf3d7; }
+        .belanja-rek-select { width: 100%; }
+
+        .rekening-row { display: grid; grid-template-columns: 1.5fr 1fr 1.5fr 50px; gap: 5px; margin-bottom: 5px; background: #34495e; padding: 6px; border-radius: 4px; align-items: center; }
+        .rekening-row input { padding: 4px; border-radius: 3px; border: none; font-size: 8.5pt; }
+
+        .btn { padding: 8px 15px; border-radius: 4px; border: none; font-weight: bold; cursor: pointer; font-size: 10pt; }
+        .btn-update { background: #2980b9; color: white; width: 100%; font-size: 11pt; margin-top: 10px; }
+        .btn-print { background: #e67e22; color: white; width: 100%; font-size: 11pt; }
+        .btn-green { background: #27ae60; color: white; }
+        .btn-blue { background: #3498db; color: white; }
+        .btn-red { background: #e74c3c; color: white; }
+        .btn-purple { background: #9b59b6; color: white; }
+        .btn-gray { background: #5f6368; color: white; }
+        .btn-small { padding: 4px 8px; font-size: 8pt; }
+
+        .total-box { background: #1abc9c; padding: 12px; border-radius: 6px; margin-top: 10px; text-align: center; }
+        .total-box .label { font-size: 10pt; font-weight: bold; }
+        .total-box .amount { font-size: 16pt; font-weight: bold; }
+        .total-box .terbilang { font-size: 9pt; font-style: italic; margin-top: 4px; }
+
+
+        /* PILIHAN DOKUMEN UNTUK CETAK */
+        .print-selector {
+            background:#34495e; padding:12px; border-radius:6px; margin-top:10px;
+        }
+        .print-selector-header {
+            display:flex; justify-content:space-between; align-items:center;
+            gap:8px; flex-wrap:wrap; margin-bottom:8px;
+        }
+        .print-selector-title { color:#f1c40f; font-weight:bold; font-size:10pt; }
+        .print-actions { display:flex; gap:5px; flex-wrap:wrap; }
+        .print-doc-list {
+            display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+            gap:5px; max-height:320px; overflow-y:auto; padding:4px;
+        }
+        .print-doc-item {
+            display:flex; align-items:center; gap:7px; background:#2c3e50;
+            padding:7px 8px; border-radius:4px; cursor:pointer;
+            font-size:8.5pt; color:#ecf0f1;
+        }
+        .print-doc-item:hover { background:#40566b; }
+        .print-doc-item input { width:18px; height:18px; cursor:pointer; accent-color:#27ae60; }
+        .print-selected-info { font-size:8pt; color:#bdc3c7; margin-top:7px; }
+
+        .status-msg { padding: 8px; border-radius: 4px; font-size: 10pt; margin-top: 8px; display: none; }
+        .status-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+        .page-break { page-break-after: always; }
+
+        .container { position: relative; }
+        .doc-toolbar { position: absolute; top: 5px; right: 5px; z-index: 50; display: flex; gap: 5px; }
+        .doc-toolbar .btn { font-size: 7.5pt; padding: 3px 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+        .no-print { }
+        @media print { .no-print { display: none !important; } }
+        .kuasa-subtitle { text-align: center; font-weight: bold; font-size: 12pt; margin-bottom: 4px; }
+        .kuasa-subtitle2 { text-align: center; font-weight: bold; font-size: 11pt; margin-bottom: 20px; }
+        .upah-row { display: grid; grid-template-columns: 2fr 1.5fr 1.2fr 1.3fr 1fr 1fr 40px; gap: 5px; margin-bottom: 5px; background: #34495e; padding: 6px; border-radius: 4px; align-items: center; }
+        .upah-row input { padding: 4px; border-radius: 3px; border: none; font-size: 8.5pt; }
+        .upah-row input[type="number"] { text-align: right; }
+        .peserta-row { display: grid; grid-template-columns: 2fr 1.5fr 40px; gap: 5px; margin-bottom: 5px; background: #34495e; padding: 6px; border-radius: 4px; align-items: center; }
+        .peserta-row input { padding: 4px; border-radius: 3px; border: none; font-size: 8.5pt; }
+        .foto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
+        .foto-item { border: 1px solid #888; padding: 6px; text-align: center; }
+        .foto-item img { width: 100%; max-height: 280px; object-fit: contain; display: block; margin: 0 auto; }
+        .foto-cap { font-size: 10pt; margin-top: 5px; font-style: italic; }
+        .foto-placeholder { border: 2px dashed #999; min-height: 180px; display: flex; align-items: center; justify-content: center; color: #888; font-size: 10pt; text-align: center; padding: 10px; }
+        .upload-preview { max-width: 90px; max-height: 60px; border: 1px solid #7f8c8d; margin-top: 4px; display: none; }
+
+        @media print {
+            #editor-panel { display: none !important; }
+            body { background: white; }
+            .container { margin: 0; padding: 0; width: 100%; box-shadow: none; }
+            .page-break { page-break-after: always; }
+            @page { size: portrait; margin: 1.5cm; }
+        }
+    
+/* ================= MODERN DASHBOARD UI ================= */
+:root{
+    --navy:#0d2d52;
+    --navy2:#123d6d;
+    --blue:#1684ef;
+    --blue2:#2f9bf4;
+    --bg:#eef4fa;
+    --card:#ffffff;
+    --text:#173b63;
+    --muted:#71849a;
+    --line:#dce7f2;
+    --green:#16b86a;
+    --orange:#f58b18;
+    --red:#ef5350;
+    --shadow:0 10px 28px rgba(25,67,105,.10);
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg)!important;color:var(--text);}
+#app-wrapper{min-height:100vh;background:var(--bg);}
+.dashboard-topbar{
+    position:fixed;left:0;right:0;top:0;height:70px;z-index:2000;
+    display:flex;align-items:center;justify-content:space-between;padding:0 22px;
+    background:linear-gradient(110deg,#0c3768,#1466b8 55%,#1b76c8);
+    color:#fff;box-shadow:0 4px 18px rgba(10,43,78,.25);
+}
+.brand-area{display:flex;align-items:center;gap:12px;min-width:0;}
+.brand-icon{
+    width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+    background:rgba(255,255,255,.16);font-size:25px;border:1px solid rgba(255,255,255,.22);
+}
+.brand-title{font-size:17px;font-weight:800;line-height:1.1;white-space:nowrap;}
+.brand-school{font-size:11px;opacity:.78;margin-top:4px;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.admin-badge{display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.12);padding:7px 13px;border-radius:12px;}
+.admin-avatar{font-size:20px;}
+.admin-badge b{display:block;font-size:12px;}
+.admin-badge small{display:block;font-size:9px;opacity:.75;}
+.topbar-icon{width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.10);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.topbar-icon:hover{background:rgba(255,255,255,.2);}
+
+.dashboard-sidebar{
+    position:fixed;left:0;top:70px;bottom:0;width:228px;z-index:1500;
+    background:linear-gradient(180deg,#0d2e55,#102f55 65%,#0b2849);color:#fff;
+    padding:22px 14px 18px;overflow:auto;box-shadow:4px 0 18px rgba(10,35,60,.12);
+}
+.side-label{font-size:9px;letter-spacing:1.2px;color:#8fa9c3;font-weight:800;padding:0 12px 9px;}
+.side-link{
+    width:100%;border:0;background:transparent;color:#dceafa;text-align:left;
+    display:flex;align-items:center;gap:11px;padding:12px 13px;margin:3px 0;
+    border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;transition:.18s;
+}
+.side-link span{width:20px;text-align:center;font-size:16px;}
+.side-link:hover{background:rgba(255,255,255,.09);color:#fff;transform:translateX(2px);}
+.side-link.active{background:linear-gradient(90deg,#0e84f5,#2376d5);color:#fff;box-shadow:0 5px 14px rgba(14,132,245,.25);}
+.side-tip{
+    margin:28px 5px 0;padding:14px 12px;border-radius:14px;
+    background:linear-gradient(145deg,rgba(43,105,170,.45),rgba(26,65,108,.65));
+    border:1px solid rgba(255,255,255,.08);font-size:10px;color:#d7e6f5;
+}
+.side-tip .tip-icon{font-size:20px;margin-bottom:3px;}
+.side-tip b{color:#ffd54f;font-size:12px;}
+.side-tip p{line-height:1.5;margin:4px 0 0;}
+.side-footer{font-size:9px;color:#7893af;text-align:center;margin-top:30px;line-height:1.5;}
+.side-footer span{opacity:.7;}
+
+#editor-panel{
+    width:auto!important;max-width:none!important;margin:0!important;padding:96px 390px 55px 258px!important;
+    min-height:100vh;background:var(--bg)!important;color:var(--text)!important;
+    box-shadow:none!important;position:relative;display:block;overflow:visible!important;
+}
+.editor-welcome{
+    background:linear-gradient(115deg,#fff,#f7fbff);border:1px solid var(--line);border-radius:18px;
+    padding:22px 24px;display:flex;align-items:center;gap:18px;box-shadow:var(--shadow);margin-bottom:20px;
+}
+.welcome-icon{
+    width:58px;height:58px;flex:0 0 58px;border-radius:50%;background:linear-gradient(135deg,#0e84f5,#2c9af2);
+    color:#fff;display:flex;align-items:center;justify-content:center;font-size:29px;box-shadow:0 8px 18px rgba(22,132,239,.25);
+}
+.welcome-text{min-width:0;flex:1;}
+.welcome-kicker{font-size:9px;color:#1684ef;letter-spacing:1.2px;font-weight:800;}
+.editor-welcome h1{margin:4px 0 5px;font-size:22px;color:#143f6b;}
+.editor-welcome p{margin:0;color:#71849a;font-size:11px;line-height:1.45;}
+.welcome-stat{min-width:145px;background:#eef7ff;border:1px solid #d7eaff;border-radius:13px;padding:12px 15px;text-align:center;}
+.welcome-stat b{display:block;color:#0d78df;font-size:22px;}
+.welcome-stat span{font-size:10px;color:#6c8299;font-weight:700;}
+
+.form-section-title{
+    color:#164a7c!important;background:#fff;border:1px solid var(--line);border-left:4px solid var(--blue);
+    border-radius:12px;padding:12px 15px!important;margin:20px 0 10px!important;
+    font-size:13px!important;box-shadow:0 5px 16px rgba(20,62,98,.06);scroll-margin-top:88px;
+}
+.form-grid{gap:12px!important;}
+.input-group label{color:#61768d!important;font-size:9px!important;font-weight:800!important;}
+.input-group input,.input-group textarea,.input-group select{
+    background:#fff!important;color:#203d5a!important;border:1px solid #d5e1ec!important;
+    border-radius:8px!important;padding:9px 10px!important;font-size:11px!important;box-shadow:0 2px 5px rgba(0,0,0,.03);
+}
+.input-group input:focus,.input-group textarea:focus,.input-group select:focus{
+    outline:none;border-color:#55a9ef!important;box-shadow:0 0 0 3px rgba(22,132,239,.10);
+}
+#editor-panel > .form-grid[style*="background:#34495e"],
+#editor-panel .form-grid[style*="background:#34495e"]{
+    background:#f7fbff!important;border:1px solid var(--line);border-radius:12px!important;
+}
+.belanja-row,.rekening-row,.upah-row,.peserta-row{
+    background:#fff!important;border:1px solid var(--line);box-shadow:0 3px 10px rgba(28,67,103,.06);
+}
+.belanja-row input,.rekening-row input,.upah-row input,.peserta-row input,
+.belanja-row select{background:#f9fbfd!important;color:#24435f!important;border:1px solid #dce6ef!important;}
+.total-box{background:linear-gradient(135deg,#13ad68,#1ac57b)!important;border-radius:13px!important;box-shadow:0 8px 18px rgba(22,184,106,.16);}
+.btn{border-radius:8px!important;transition:.18s!important;box-shadow:none;}
+.btn:hover{transform:translateY(-1px);filter:brightness(1.03);}
+.btn-update{background:#2787cc!important;}
+.btn-print{background:#f28a18!important;}
+
+.modern-action-grid{
+    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;
+}
+.modern-action{
+    border:1px solid var(--line);border-radius:10px!important;min-height:52px;
+    min-width:0;display:flex;align-items:center;gap:7px;padding:7px 8px;
+    text-align:left;cursor:pointer;box-shadow:0 3px 9px rgba(26,66,104,.06);
+    color:#fff!important;overflow:hidden;
+}
+.modern-action>span{
+    font-size:18px;width:27px;min-width:27px;flex:0 0 27px;text-align:center;
+}
+.modern-action>div{
+    min-width:0;flex:1 1 auto;overflow:hidden;
+}
+.modern-action b{
+    display:block;font-size:10px;line-height:1.15;
+    white-space:normal;overflow-wrap:anywhere;word-break:normal;
+}
+.modern-action small{
+    display:block;font-size:7.5px;line-height:1.15;opacity:.82;margin-top:2px;
+    white-space:normal;overflow-wrap:anywhere;word-break:normal;
+}
+.action-save{background:linear-gradient(135deg,#16b86a,#25c47a);}
+.action-pdf{background:linear-gradient(135deg,#248eea,#35a2f4);}
+.action-update{background:linear-gradient(135deg,#287fbd,#3b99d7);}
+.action-print{background:linear-gradient(135deg,#f17e11,#f59b29);}
+.action-reset{background:linear-gradient(135deg,#ed4c48,#f46b67);}
+
+.print-selector{
+    position:fixed;right:18px;top:88px;width:352px;max-height:calc(100vh - 106px);z-index:1400;
+    background:#fff!important;color:var(--text)!important;padding:17px!important;border-radius:16px!important;
+    border:1px solid var(--line);box-shadow:0 12px 35px rgba(26,63,99,.14);margin:0!important;overflow:hidden;
+}
+.print-selector-header{display:block!important;margin:0 0 10px!important;}
+.print-selector-title{color:#174b7d!important;font-size:14px!important;letter-spacing:.1px;}
+.print-selector-subtitle{font-size:9px;color:#8091a4;margin-top:3px;}
+.print-actions{display:flex;gap:6px;margin-top:10px;}
+.select-pill{border:0;border-radius:7px;padding:7px 10px;font-size:9px;font-weight:800;cursor:pointer;}
+.select-all{background:#17b86a;color:#fff;}
+.select-none{background:#edf1f5;color:#627489;}
+.print-summary{
+    display:flex;align-items:center;gap:9px;background:#f2f8ff;border:1px solid #dcecff;
+    padding:10px;border-radius:10px;margin-bottom:9px;
+}
+.summary-icon{width:27px;height:27px;border-radius:50%;background:#1684ef;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;}
+.print-summary b{display:block;font-size:11px;color:#1a4d7e;}
+.print-summary small{display:block;color:#8294a7;font-size:8px;margin-top:2px;}
+.print-doc-list{
+    display:flex!important;flex-direction:column;gap:5px;max-height:calc(100vh - 355px)!important;
+    overflow-y:auto!important;padding:2px!important;
+}
+.print-doc-item{
+    display:flex!important;align-items:center;gap:9px;background:#f9fbfd!important;
+    border:1px solid #e0e8f0;padding:9px 10px!important;border-radius:9px!important;color:#274b6d!important;
+    font-size:9.5px!important;cursor:pointer;transition:.15s;
+}
+.print-doc-item:hover{background:#f0f7ff!important;border-color:#a9d4f7;}
+.print-doc-item input{width:17px!important;height:17px!important;accent-color:#1684ef!important;flex:0 0 auto;}
+.print-selected-info{display:none!important;}
+.print-panel-actions{display:grid;grid-template-columns:1fr;gap:7px;margin-top:10px;}
+.panel-print-btn,.panel-pdf-btn{
+    border:0;border-radius:9px;padding:11px;font-weight:800;color:#fff;cursor:pointer;font-size:10px;
+}
+.panel-print-btn{background:linear-gradient(135deg,#16b86a,#25c47a);}
+.panel-pdf-btn{background:linear-gradient(135deg,#1684ef,#2f9bf4);}
+
+#status_msg{border-radius:9px!important;}
+.doc-toolbar{opacity:.9;}
+
+@media (max-width:1200px){
+    .modern-action-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}
+    .modern-action{min-height:48px;padding:6px 7px;gap:5px;}
+    .modern-action>span{font-size:17px;width:24px;min-width:24px;flex-basis:24px;}
+    .modern-action b{font-size:9.5px;line-height:1.12;}
+    .modern-action small{font-size:7px;line-height:1.12;}
+    #editor-panel{padding-right:25px!important;padding-left:245px!important;}
+    .print-selector{position:relative;right:auto;top:auto;width:auto;max-height:none;margin:18px 0!important;}
+    .print-doc-list{max-height:360px!important;}
+}
+@media (max-width:760px){
+    .modern-action-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;}
+    .modern-action{min-height:48px;padding:6px 7px;}
+    .modern-action b{font-size:9.5px;}
+    .modern-action small{font-size:7px;}
+    .dashboard-topbar{height:62px;padding:0 10px;}
+    .brand-title{font-size:13px;white-space:normal;}
+    .brand-school{font-size:8px;}
+    .admin-badge{display:none;}
+    .dashboard-sidebar{top:62px;width:70px;padding:14px 8px;}
+    .side-label,.side-link{font-size:0;}
+    .side-link{justify-content:center;padding:12px 6px;}
+    .side-link span{font-size:17px;}
+    .side-tip,.side-footer{display:none;}
+    #editor-panel{padding:82px 10px 30px 82px!important;}
+    .editor-welcome{padding:15px;gap:10px;}
+    .welcome-icon{width:44px;height:44px;flex-basis:44px;font-size:22px;}
+    .editor-welcome h1{font-size:16px;}
+    .welcome-stat{display:none;}
+    .modern-action-grid{grid-template-columns:1fr;}
+    .modern-action{width:100%;min-width:0;}
+    .modern-action b{font-size:10px;}
+    .modern-action small{font-size:7.5px;}
+    .print-selector{width:auto;}
+}
+@media print{
+    .dashboard-topbar,.dashboard-sidebar{display:none!important;}
+    #editor-panel{display:none!important;}
+}
+
+    
+/* PERBAIKAN TOMBOL SIMPAN / CETAK: ringkas, tidak memanjang dan tidak patah per huruf */
+.modern-action-grid{
+    display:grid !important;
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    gap:8px !important;
+    align-items:stretch;
+}
+.modern-action{
+    min-width:0 !important;
+    min-height:58px !important;
+    height:auto !important;
+    padding:9px 10px !important;
+    gap:8px !important;
+    flex-direction:row !important;
+    align-items:center !important;
+    justify-content:flex-start !important;
+    border-radius:10px !important;
+    overflow:visible !important;
+}
+.modern-action>span{
+    flex:0 0 24px !important;
+    width:24px !important;
+    min-width:24px !important;
+    font-size:18px !important;
+}
+.modern-action>div{
+    flex:1 1 auto !important;
+    min-width:0 !important;
+    overflow:visible !important;
+}
+.modern-action b{
+    font-size:10px !important;
+    line-height:1.25 !important;
+    white-space:normal !important;
+    overflow-wrap:normal !important;
+    word-break:normal !important;
+}
+.modern-action small{
+    font-size:8px !important;
+    line-height:1.25 !important;
+    white-space:normal !important;
+    overflow-wrap:normal !important;
+    word-break:normal !important;
+}
+@media (max-width:1200px){
+    .modern-action-grid{grid-template-columns:repeat(3,minmax(0,1fr)) !important;}
+    .modern-action{padding:8px !important;gap:6px !important;min-height:54px !important;}
+    .modern-action b{font-size:9.5px !important;}
+    .modern-action small{font-size:7.5px !important;}
+}
+@media (max-width:760px){
+    .modern-action-grid{grid-template-columns:1fr !important;}
+    .modern-action{min-height:48px !important;padding:8px 10px !important;}
+    .modern-action b{font-size:10px !important;}
+    .modern-action small{font-size:8px !important;}
+}
+
+
+/* Template kuitansi ringkas mengikuti contoh pengguna */
+.kuitansi-sheet{
+    width:790px;
+    padding:12px !important;
+    text-align:left !important;
+}
+.kuitansi-paper{
+    width:100%;
+    min-height:255px;
+    border:1px solid #777;
+    padding:10px 14px 8px;
+    color:#222;
+    background:#fff;
+    font-family:"Times New Roman",serif;
+    font-size:9pt;
+    line-height:1.15;
+}
+.kuitansi-heading{
+    text-align:center;
+    font-size:12pt;
+    font-weight:bold;
+    font-style:italic;
+    text-decoration:underline;
+    margin:0 0 12px;
+}
+.kuitansi-fields{
+    width:100%;
+    border-collapse:collapse;
+    font-size:9pt;
+    table-layout:fixed;
+}
+.kuitansi-fields td{
+    border:0 !important;
+    padding:2px 1px !important;
+    vertical-align:top;
+    text-align:left !important;
+}
+.kuitansi-fields td:first-child{width:135px;}
+.kuitansi-fields td:nth-child(2){width:12px;}
+.kuitansi-fields td:nth-child(3){width:auto;}
+.kuitansi-date{
+    text-align:right;
+    margin:13px 3px 4px;
+    font-size:9pt;
+}
+.kuitansi-signatures{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:8px;
+    align-items:end;
+    margin-top:2px;
+    text-align:center;
+    font-size:8.5pt;
+}
+.kuitansi-sign{min-width:0;}
+.kuitansi-sign-space{height:35px;}
+.kuitansi-sign b{font-size:8.5pt;}
+.kuitansi-sign div{overflow-wrap:anywhere;}
+@media print{
+    #doc-kuitansi.kuitansi-sheet{
+        width:100% !important;
+        max-width:none !important;
+        margin:0 !important;
+        padding:0 !important;
+        box-shadow:none !important;
+    }
+    .kuitansi-paper{
+        min-height:0;
+        padding:9px 12px 7px;
+        break-inside:avoid;
+        page-break-inside:avoid;
+    }
+}
+
+
+
+/* Form autentikasi Firebase */
+.login-box input { display:block; margin:10px 0; text-align:left; }
+.login-box button { display:block; }
+#auth-register input, #auth-reset input { width:100%; }
+</style>
+<base target="_blank">
+</head>
+<body>
+
+<!-- LOGIN / REGISTRASI SEKOLAH BERBASIS FIREBASE -->
+<div id="login-screen">
+  <div class="login-box" style="width:min(420px,92vw);max-height:92vh;overflow:auto;">
+    <h2>🔐 Akses Aplikasi SI + PBJ</h2>
+    <p style="font-size:10pt;color:#d6e2ee;">Masuk atau daftarkan akun sekolah. Data aplikasi akan disinkronkan ke Firebase.</p>
+    <div id="auth-login">
+      <input id="login-npsn" inputmode="numeric" maxlength="8" placeholder="NPSN (8 digit)" autocomplete="username">
+      <input id="login-email" type="email" placeholder="Email terdaftar" autocomplete="email">
+      <input id="login-password" type="password" placeholder="Password" autocomplete="current-password">
+      <button id="btn-login" onclick="loginSekolah()">Masuk</button>
+      <button type="button" style="margin-top:8px;background:#2980b9" onclick="showAuthPanel('register')">Registrasi Sekolah</button>
+      <button type="button" style="margin-top:8px;background:#7f8c8d" onclick="showAuthPanel('reset')">Lupa / Ganti Password</button>
+    </div>
+    <div id="auth-register" style="display:none;text-align:left;">
+      <input id="reg-npsn" inputmode="numeric" maxlength="8" placeholder="NPSN (8 digit)">
+      <input id="reg-school" placeholder="Nama Sekolah" autocomplete="organization">
+      <input id="reg-email" type="email" placeholder="Email aktif untuk pemulihan password" autocomplete="email">
+      <input id="reg-password" type="password" placeholder="Buat password (minimal 6 karakter)" autocomplete="new-password">
+      <input id="reg-password2" type="password" placeholder="Ulangi password" autocomplete="new-password">
+      <button onclick="registrasiSekolah()">Daftarkan Sekolah</button>
+      <button type="button" style="margin-top:8px;background:#7f8c8d" onclick="showAuthPanel('login')">Kembali ke Login</button>
+    </div>
+    <div id="auth-reset" style="display:none;text-align:left;">
+      <p style="font-size:9pt;color:#d6e2ee;">Masukkan NPSN dan email akun Firebase yang terdaftar. Tautan reset akan dikirim ke email tersebut.</p>
+      <input id="reset-npsn" inputmode="numeric" maxlength="8" placeholder="NPSN (8 digit)">
+      <input id="reset-email" type="email" placeholder="Email terdaftar" autocomplete="email">
+      <button onclick="kirimResetPassword()">Kirim Tautan Reset</button>
+      <button type="button" style="margin-top:8px;background:#7f8c8d" onclick="showAuthPanel('login')">Kembali ke Login</button>
+    </div>
+    <div id="login-error" class="login-error" style="display:block;color:#ffd6d6;white-space:normal;"></div>
+    <div id="auth-status" style="font-size:11px;margin-top:8px;color:#d6e2ee;"></div>
+  </div>
+</div>
+
+<!-- APLIKASI UTAMA -->
+<div id="app-wrapper" style="display:none;"><div class="dashboard-topbar">
+    <div class="brand-area">
+        <div class="brand-icon">📄</div>
+        <div>
+            <div class="brand-title">Generator SI + Dokumen PBJ</div>
+            <div class="brand-school" id="dash-school-name">SDN Majalengka Wetan VIII</div>
+        </div>
+    </div>
+    <div class="topbar-right">
+        <div class="admin-badge"><span class="admin-avatar">👤</span><div><b>Admin</b><small>Pengelola Dokumen</small></div></div>
+        <div class="topbar-icon" title="Pengaturan">⚙️</div>
+        <div class="topbar-icon" title="Keluar" onclick="logoutApp()">↪</div>
+    </div>
+</div>
+
+<aside class="dashboard-sidebar">
+    <div class="side-label">NAVIGASI</div>
+    <button class="side-link active" onclick="dashGo('sec-identitas',this)"><span>⌂</span> Beranda / Identitas</button>
+    <button class="side-link" onclick="dashGo('sec-rekening',this)"><span>▣</span> Data Rekening</button>
+    <button class="side-link" onclick="dashGo('sec-belanja',this)"><span>☷</span> Rincian Belanja</button>
+    <button class="side-link" onclick="dashGo('sec-kuasa',this)"><span>♙</span> Surat Kuasa</button>
+    <button class="side-link" onclick="dashGo('sec-pbj',this)"><span>▤</span> Dokumen PBJ</button>
+    <button class="side-link" onclick="dashGo('sec-foto',this)"><span>▧</span> Foto & Pendukung</button>
+    <button class="side-link" onclick="dashGo('sec-print',this)"><span>🖨</span> Cetak / Download</button>
+    <div class="side-tip">
+        <div class="tip-icon">💡</div>
+        <b>Tips</b>
+        <p>Pilih dokumen yang diperlukan saja. Cetak dan PDF akan mengikuti pilihan Anda.</p>
+    </div>
+    <div class="side-footer">SI + PBJ Digital<br><span>SDN Majalengka Wetan VIII</span></div>
+</aside>
+
+    <div id="editor-panel">
+        <div class="editor-welcome">
+            <div class="welcome-icon">📄</div>
+            <div class="welcome-text">
+                <div class="welcome-kicker">ADMINISTRASI DIGITAL SEKOLAH</div>
+                <h1>Generator SI + Surat Kuasa + Dokumen PBJ</h1>
+                <p>Kelola data, lengkapi dokumen, lalu pilih hanya dokumen yang diperlukan untuk dicetak atau diunduh.</p>
+            </div>
+            <div class="welcome-stat"><b>20</b><span>Dokumen tersedia</span></div>
+        </div>
+
+        <div id="sec-identitas" class="form-section-title">0. IDENTITAS SEKOLAH & PEJABAT (Wajib Diisi)</div>
+        <div class="form-grid">
+            <div class="input-group"><label>Pilih Kabupaten/Kota:</label><select id="in_kabupaten" onchange="autoSave()">
+                <option value="MAJALENGKA">KABUPATEN MAJALENGKA</option>
+                <option value="CIREBON">KABUPATEN CIREBON</option>
+                <option value="KUNINGAN">KABUPATEN KUNINGAN</option>
+                <option value="CIAMIS">KABUPATEN CIAMIS</option>
+                <option value="BANDUNG">KABUPATEN BANDUNG</option>
+                <option value="SUMEDANG">KABUPATEN SUMEDANG</option>
+                <option value="INDRAMAYU">KABUPATEN INDRAMAYU</option>
+                <option value="SUBANG">KABUPATEN SUBANG</option>
+                <option value="GARUT">KABUPATEN GARUT</option>
+                <option value="TASIKMALAYA">KABUPATEN TASIKMALAYA</option>
+                <option value="PURWAKARTA">KABUPATEN PURWAKARTA</option>
+                <option value="KOTA BANDUNG">KOTA BANDUNG</option>
+                <option value="KOTA BEKASI">KOTA BEKASI</option>
+                <option value="KOTA BOGOR">KOTA BOGOR</option>
+                <option value="KOTA DEPOK">KOTA DEPOK</option>
+                <option value="KOTA CIREBON">KOTA CIREBON</option>
+                <option value="LAINNYA">LAINNYA</option>
+            </select></div>
+            <div class="input-group"><label>Nama Sekolah:</label><input type="text" id="in_nama_sekolah" value="SD NEGERI MAJALENGKA WETAN VIII" oninput="autoSave(); updateDashboardSchoolName()"></div>
+            <div class="input-group"><label>Nama Kepala Sekolah:</label><input type="text" id="in_nama_ks" value="KARYADI, S.Pd" oninput="autoSave()"></div>
+            <div class="input-group"><label>NIP Kepala Sekolah:</label><input type="text" id="in_nip_ks" value="19750505 200003 1 012" oninput="autoSave()"></div>
+            <div class="input-group"><label>Nama Bendahara:</label><input type="text" id="in_nama_bend" value="SITI ROKAYAH, S.Pd" oninput="autoSave()"></div>
+            <div class="input-group"><label>NIP Bendahara:</label><input type="text" id="in_nip_bend" value="19720517 200801 2 006" oninput="autoSave()"></div>
+            <div class="input-group"><label>No. Rekening Sekolah (untuk SI):</label><input type="text" id="in_rek_sekolah" value="0120233130100" oninput="autoSave()"></div>
+            <div class="input-group"><label>Alamat Sekolah:</label><input type="text" id="in_alamat_sekolah" value="Jln. K.H Abdul halim Nomor 5 Kel.Majalengka Wetan 45411" oninput="autoSave()"></div>
+            <div class="input-group"><label>Email Sekolah:</label><input type="text" id="in_email_sekolah" value="wetan8s@yahoo.com" oninput="autoSave()"></div>
+        </div>
+
+        <div class="form-section-title">1. DATA SURAT</div>
+        <div class="form-grid">
+            <div class="input-group"><label>Logo Sekolah:</label><input type="file" id="in_logo" onchange="previewLogo(this)" accept="image/*"></div>
+            <div class="input-group"><label>Nomor Surat:</label><input type="text" id="in_no_surat" value="421.2 /012/ SDNMJLWTNVIII / Disdik /2025" oninput="autoSave()"></div>
+            <div class="input-group"><label>Tanggal Surat:</label><input type="text" id="in_tgl" value="14 April 2025" oninput="autoSave()"></div>
+        </div>
+
+        
+
+        <div id="sec-rekening" class="form-section-title">2. MASTER DATA REKENING</div>
+        <div style="font-size:8pt; color:#bdc3c7; margin-bottom:6px;">Data rekening tersimpan otomatis di lokal browser.</div>
+        <div id="rekening-inputs"></div>
+        <button class="btn btn-green btn-small" onclick="addRekeningRow()" style="margin-top:4px;">+ Tambah Rekening</button>
+
+        <div id="sec-belanja" class="form-section-title">3. PASTE RINCIAN BELANJA (OTOMATIS TERSIMPAN PER BULAN)</div>
+        <div class="form-grid" style="background:#34495e; padding:8px; border-radius:4px; margin-bottom:8px;">
+            <div class="input-group">
+                <label>Bulan:</label>
+                <select id="in_bulan" onchange="changePeriod()">
+                    <option value="Januari">Januari</option>
+                    <option value="Februari">Februari</option>
+                    <option value="Maret">Maret</option>
+                    <option value="April">April</option>
+                    <option value="Mei">Mei</option>
+                    <option value="Juni">Juni</option>
+                    <option value="Juli">Juli</option>
+                    <option value="Agustus">Agustus</option>
+                    <option value="September">September</option>
+                    <option value="Oktober">Oktober</option>
+                    <option value="November">November</option>
+                    <option value="Desember">Desember</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Tahun Anggaran:</label>
+                <select id="in_tahun" onchange="changePeriod()">
+                    <option value="2024">2024</option>
+                    <option value="2025">2025</option>
+                    <option value="2026" selected>2026</option>
+                    <option value="2027">2027</option>
+                    <option value="2028">2028</option>
+                    <option value="2029">2029</option>
+                    <option value="2030">2030</option>
+                </select>
+            </div>
+        </div>
+        <div class="input-group">
+            <label>Paste Rincian Belanja (format: Nama | Jumlah) — langsung tersimpan ke bulan aktif:</label>
+            <textarea id="rapbs_input" placeholder="Contoh:&#10;ATK Penggandaan | 91100&#10;Jamuan Makan Pramuka | 165000&#10;&#10;Copy langsung dari tabel RAPBS/PDF, tidak perlu klik tombol apa pun." oninput="autoParseRapbs()"></textarea>
+            <button class="btn btn-green btn-small" onclick="simpanBelanja()" style="margin-top:6px; align-self:flex-start;">💾 Simpan Belanja (Kosongkan Kolom Paste)</button>
+        </div>
+
+        <div class="form-section-title">4. RINCIAN BELANJA (Ceklis untuk masukkan ke SI)</div>
+        <div style="font-size:8pt; color:#bdc3c7; margin-bottom:6px;">
+            Kolom: Nama | Rekening | Bruto | PPN | PPH | Hapus. Data tersimpan otomatis per periode aktif.
+        </div>
+        <div style="display:grid; grid-template-columns:30px 2fr 2fr 1fr 1fr 1.5fr 40px; gap:5px; font-size:7pt; color:#95a5a6; padding:0 8px; margin-bottom:2px;">
+            <div></div><div>Nama Belanja</div><div>Rekening</div><div>Bruto (Rp)</div><div style="color:#f1c40f;">PPN (Rp)</div><div style="color:#f1c40f;">PPH (Rp)</div><div></div>
+        </div>
+        <div id="belanja-inputs"></div>
+        <button class="btn btn-purple" onclick="addManualRow()" style="margin-top:6px;">+ Tambah Item Manual</button>
+        <div style="font-size:8pt; color:#95a5a6; margin-top:4px;">
+            Setiap bulan menyimpan datanya sendiri. Hasil paste otomatis masuk ke bulan yang sedang aktif — klik bulan lain untuk melihat data bulan tersebut (kosong jika belum pernah diisi).
+        </div>
+
+        <div class="total-box">
+            <div class="label">TOTAL BRUTO TERPILIH</div>
+            <div class="amount" id="total_selected">Rp 0</div>
+            <div class="terbilang" id="terbilang_selected">-</div>
+            <div style="font-size:8pt; color:#ecf0f1; margin-top:6px; border-top:1px solid rgba(255,255,255,0.3); padding-top:4px;">
+                Netto = Bruto dikurangi PPN &amp; PPH (terlihat di dokumen SI)
+            </div>
+        </div>
+
+        <div class="form-section-title">5. DATA PENJUAL / PENERIMA KUASA</div>
+        <div class="form-grid">
+            <div class="input-group"><label>Nama Penjual:</label><input type="text" id="in_nama_penjual" oninput="autoSave()" value=""></div>
+            <div class="input-group"><label>No. KTP/NIK:</label><input type="text" id="in_nik_penjual" oninput="autoSave()" value=""></div>
+            <div class="input-group"><label>Jabatan / Usaha:</label><input type="text" id="in_jabatan_penjual" oninput="autoSave()" value="Pemilik Toko"></div>
+            <div class="input-group"><label>Alamat Toko:</label><input type="text" id="in_alamat_penjual" oninput="autoSave()" value=""></div>
+        </div>
+
+        <div id="sec-kuasa" class="form-section-title">5A. SURAT KUASA (TEMPLATE BARU), SPTJM &amp; DAFTAR UPAH</div>
+        <div class="form-grid">
+            <div class="input-group" style="grid-column:1/-1;"><label>Judul Kuasa (TENTANG ...):</label><input type="text" id="in_judul_kuasa" value="PEMBAYARAN UPAH KERJA TUKANG KEGIATAN PEMELIHARAAN GEDUNG/SARANA/PRASARANA SEKOLAH" oninput="autoSave()"></div>
+            <div class="input-group" style="grid-column:1/-1;"><label>Maksud / Tujuan Pemberian Kuasa (1 baris per poin):</label><textarea id="in_maksud_kuasa" oninput="autoSave()">1. Menerima pembayaran upah kerja tukang untuk kegiatan pemeliharaan Gedung/Sarana/Prasarana sekolah sesuai kesepakatan kerja.
+2. Menyalurkan dan mendistribusikan upah tersebut secara langsung kepada para tukang yang namanya tercantum dalam Daftar Penerimaan Upah Kerja Tukang yang sah sesuai dengan kesepakatan kerja.
+3. Menandatangani Surat Pernyataan Tanggung Jawab Mutlak yang berkaitan dengan pembayaran upah kerja tukang tersebut.</textarea></div>
+        </div>
+        <div style="font-size:8.5pt; color:#f1c40f; font-weight:bold; margin-top:8px;">Pemberi Kuasa (para pekerja/tukang):</div>
+        <div style="display:grid; grid-template-columns:2fr 2fr 1.5fr 40px; gap:5px; font-size:7pt; color:#95a5a6; padding:0 8px; margin:4px 0 2px;"><div>Nama</div><div>Alamat</div><div>No KTP/NIK</div><div></div></div>
+        <div id="kuasa-pemberi-inputs"></div>
+        <button class="btn btn-green btn-small" onclick="addPemberi()">+ Tambah Pemberi Kuasa</button>
+        <div style="font-size:8.5pt; color:#f1c40f; font-weight:bold; margin-top:10px;">Penerima Kuasa (koordinator):</div>
+        <div class="form-grid" style="margin-top:4px;">
+            <div class="input-group"><label>Nama Penerima Kuasa:</label><input type="text" id="in_nama_kuasa2" oninput="autoSave()"></div>
+            <div class="input-group"><label>Jabatan:</label><input type="text" id="in_jabatan_kuasa2" value="Koordinator Tukang Pemeliharaan Gedung/Sarana/Prasarana" oninput="autoSave()"></div>
+            <div class="input-group"><label>Alamat:</label><input type="text" id="in_alamat_kuasa2" oninput="autoSave()"></div>
+            <div class="input-group"><label>No KTP/NIK:</label><input type="text" id="in_nik_kuasa2" oninput="autoSave()"></div>
+            <div class="input-group"><label>No Telepon/HP:</label><input type="text" id="in_telp_kuasa2" oninput="autoSave()"></div>
+        </div>
+        <div style="font-size:8.5pt; color:#f1c40f; font-weight:bold; margin-top:10px;">Daftar Penerimaan Upah Kerja Tukang (lampiran Daftar Upah):</div>
+        <div style="display:grid; grid-template-columns:2fr 1.5fr 1.2fr 1.3fr 1fr 1fr 40px; gap:5px; font-size:7pt; color:#95a5a6; padding:0 8px; margin:4px 0 2px;"><div>Nama</div><div>Jabatan</div><div>NIK</div><div>No Rekening</div><div>Jml Kotor</div><div>Pajak</div><div></div></div>
+        <div id="upah-inputs"></div>
+        <button class="btn btn-green btn-small" onclick="addUpah()">+ Tambah Penerima Upah</button>
+        <div id="upah_total_info" style="font-size:9pt; color:#1abc9c; font-weight:bold; margin-top:6px;"></div>
+
+        <div class="form-section-title">5B. PESERTA RAPAT &amp; NOTULA</div>
+        <div class="form-grid">
+            <div class="input-group" style="grid-column:1/-1;"><label>Nama Kegiatan / Acara Rapat:</label><input type="text" id="in_acara_rapat" value="Rapat Pembahasan Rencana Pengadaan Barang/Jasa" oninput="autoSave()"></div>
+            <div class="input-group" style="grid-column:1/-1;"><label>Agenda / Isi Notula (1 baris per poin):</label><textarea id="in_agenda_notula" oninput="autoSave()">1. Pembukaan oleh Kepala Sekolah.
+2. Pembahasan rencana kebutuhan barang/jasa sesuai RAPBS.
+3. Pembahasan harga dan pembandingan penyedia.
+4. Penetapan penyedia dan kesepakatan harga.
+5. Penutup.</textarea></div>
+        </div>
+        <div style="font-size:8.5pt; color:#f1c40f; font-weight:bold; margin-top:8px;">Daftar Peserta Rapat:</div>
+        <div id="peserta-inputs"></div>
+        <button class="btn btn-green btn-small" onclick="addPeserta()">+ Tambah Peserta</button>
+
+        <div class="form-section-title">6. CATATAN & TERBILANG</div>
+        <div class="form-grid">
+            <div class="input-group"><label>Catatan:</label><input type="text" id="in_catatan" value="Belanja Kebutuhan Sekolah (Bulanan)" oninput="autoSave()"></div>
+            <div class="input-group"><label>Terbilang (Manual/Otomatis):</label><input type="text" id="in_terbilang" placeholder="Akan terisi otomatis jika kosong" oninput="autoSave()"></div>
+        </div>
+
+        <div id="sec-pbj" class="form-section-title">7. DOKUMEN PBJ (FORMAT SESUAI TEMPLATE RESMI)</div>
+        <div class="form-grid">
+            <div class="input-group"><label>Penyedia 1 (dipilih/ditandatangani):</label><input type="text" id="in_vendor1" oninput="autoSave()" value="CV. Sinar Barokah"></div>
+            <div class="input-group"><label>Penyedia 2 (pembanding Produk I):</label><input type="text" id="in_vendor2" oninput="autoSave()" value="Toko Maju Jaya"></div>
+            <div class="input-group"><label>Penyedia 3 (cadangan):</label><input type="text" id="in_vendor3" oninput="autoSave()" value="UD. Berkah Abadi"></div>
+            <div class="input-group"><label>Kategori Barang/Jasa:</label><input type="text" id="in_kategori" oninput="autoSave()" value="Kebutuhan dan Perlengkapan Satuan Pendidikan"></div>
+            <div class="input-group"><label>Nama Pekerjaan:</label><input type="text" id="in_nama_pekerjaan" oninput="autoSave()" value="Pengadaan Barang/Jasa Bulanan"></div>
+            <div class="input-group"><label>Kode Rekening (Kuitansi):</label><input type="text" id="in_kode_rek" oninput="autoSave()" value="5.1.02.99.99.9999"></div>
+            <div class="input-group"><label>No. Telp/HP Sekolah:</label><input type="text" id="in_telp_sekolah" oninput="autoSave()" value=""></div>
+            <div class="input-group"><label>No. Telp/HP Penyedia:</label><input type="text" id="in_telp_penjual" oninput="autoSave()" value=""></div>
+            <div class="input-group"><label>Nomor Surat Pesanan (SP):</label><input type="text" id="in_no_po" oninput="autoSave()" value="421.2/SP/SDNMJLWTNVIII/2026"></div>
+            <div class="input-group"><label>Nomor SPK:</label><input type="text" id="in_no_spk" oninput="autoSave()" value="421.2/SPK/SDNMJLWTNVIII/2026"></div>
+            <div class="input-group"><label>Nomor Perjanjian Kesepakatan:</label><input type="text" id="in_no_spj" oninput="autoSave()" value="421.2/SPJ/SDNMJLWTNVIII/2026"></div>
+            <div class="input-group"><label>Nomor SK Tim PBJ:</label><input type="text" id="in_no_sk" oninput="autoSave()" value="000.3.1/.../2026"></div>
+            <div class="input-group"><label>Nomor BA Pemeriksaan:</label><input type="text" id="in_no_ba" oninput="autoSave()" value="421.2/BA/SDNMJLWTNVIII/2026"></div>
+            <div class="input-group"><label>Nomor Invoice/Kuitansi:</label><input type="text" id="in_no_invoice" oninput="autoSave()" value="001/INV/2026"></div>
+            <div class="input-group"><label>Hari Pemeriksaan:</label><input type="text" id="in_hari" oninput="autoSave()" value="Senin"></div>
+            <div class="input-group"><label>Tanggal Terima Barang/Jasa:</label><input type="text" id="in_tgl_terima" oninput="autoSave()" value="20 Januari 2026"></div>
+            <div class="input-group"><label>Bank Penyedia:</label><input type="text" id="in_bank_penjual" oninput="autoSave()" value="BJB"></div>
+            <div class="input-group"><label>No. Rekening / VA Penyedia:</label><input type="text" id="in_rek_penjual" oninput="autoSave()" value=""></div>
+            <div class="input-group"><label style="color:#2ecc71;">Sertakan dokumen PBJ di PDF:</label><input type="checkbox" id="in_sertakan_checklist" checked style="width:20px;height:20px;cursor:pointer;" onchange="autoSave()"></div>
+        </div>
+
+        <div id="sec-foto" class="form-section-title">7B. UPLOAD FOTO / DOKUMEN PENDUKUNG</div>
+        <div style="font-size:8pt; color:#bdc3c7; margin-bottom:6px;">Foto dikompres otomatis &amp; tersimpan di browser. Tampil otomatis di dokumen terkait (Nota, Dokumentasi Foto, PB1).</div>
+        <div class="form-grid">
+            <div class="input-group"><label>Nota Pembelian Asli (dari Toko/CV):</label>
+                <input type="file" accept="image/*" onchange="handleFotoUpload(this,'si_foto_nota','prev_nota')">
+                <img id="prev_nota" class="upload-preview">
+                <button class="btn btn-red btn-small" onclick="clearFoto('si_foto_nota','prev_nota')">Hapus Foto Nota</button>
+            </div>
+            <div class="input-group"><label>Bukti Setoran Pajak Daerah (PB1) - Opsional:</label>
+                <input type="file" accept="image/*" onchange="handleFotoUpload(this,'si_foto_pb1','prev_pb1')">
+                <img id="prev_pb1" class="upload-preview">
+                <button class="btn btn-red btn-small" onclick="clearFoto('si_foto_pb1','prev_pb1')">Hapus</button>
+            </div>
+            <div class="input-group"><label>Nomor Bukti Setoran PB1:</label><input type="text" id="in_no_pb1" oninput="autoSave()"></div>
+            <div class="input-group"><label>Jenis Pajak:</label><input type="text" id="in_jenis_pajak" value="Pajak Daerah (PB1)" oninput="autoSave()"></div>
+            <div class="input-group"><label>Jumlah Setoran PB1 (Rp) - kosongkan = total belanja:</label><input type="number" id="in_pb1_jumlah" oninput="autoSave()"></div>
+            <div class="input-group"><label style="color:#2ecc71;">Sertakan PB1 di PDF gabungan (opsional):</label><input type="checkbox" id="in_sertakan_pb1" style="width:20px;height:20px;cursor:pointer;" onchange="autoSave()"></div>
+        </div>
+        <div style="font-size:8.5pt; color:#f1c40f; font-weight:bold; margin-top:10px;">Foto Dokumentasi Kegiatan (maks. 6):</div>
+        <div class="form-grid" style="margin-top:4px;">
+            <div class="input-group"><label>Foto Dokumentasi #1:</label>
+                <input type="file" accept="image/*" onchange="handleFotoUpload(this,'si_foto_1','prev_foto_1')">
+                <img id="prev_foto_1" class="upload-preview">
+                <input type="text" id="in_foto_cap_1" placeholder="Keterangan foto 1" oninput="autoSave()">
+                <button class="btn btn-red btn-small" onclick="clearFoto('si_foto_1','prev_foto_1')">Hapus</button>
+            </div>
+            <div class="input-group"><label>Foto Dokumentasi #2:</label>
+                <input type="file" accept="image/*" onchange="handleFotoUpload(this,'si_foto_2','prev_foto_2')">
+                <img id="prev_foto_2" class="upload-preview">
+                <input type="text" id="in_foto_cap_2" placeholder="Keterangan foto 2" oninput="autoSave()">
+                <button class="btn btn-red btn-small" onclick="clearFoto('si_foto_2','prev_foto_2')">Hapus</button>
+            </div>
+            <div class="input-group"><label>Foto Dokumentasi #3:</label>
+                <input type="file" accept="image/*" onchange="handleFotoUpload(this,'si_foto_3','prev_foto_3')">
+                <img id="prev_foto_3" class="upload-preview">
+                <input type="text" id="in_foto_cap_3" placeholder="Keterangan foto 3" oninput="autoSave()">
+                <button class="btn btn-red btn-small" onclick="clearFoto('si_foto_3','prev_foto_3')">Hapus</button>
+            </div>
+            <div class="input-group"><label>Foto Dokumentasi #4:</label>
+                <input type="file" accept="image/*" onchange="handleFotoUpload(this,'si_foto_4','prev_foto_4')">
+                <img id="prev_foto_4" class="upload-preview">
+                <input type="text" id="in_foto_cap_4" placeholder="Keterangan foto 4" oninput="autoSave()">
+                            <div class="input-group"><label>Foto Dokumentasi #6:</label>
+                <input type="file" accept="image/*" onchange="handleFotoUpload(this,'si_foto_6','prev_foto_6')">
+                <img id="prev_foto_6" class="upload-preview">
+                <input type="text" id="in_foto_cap_6" placeholder="Keterangan foto 6" oninput="autoSave()">
+                <button class="btn btn-red btn-small" onclick="clearFoto('si_foto_6','prev_foto_6')">Hapus</button>
+            </div>
+        </div>
+
+        <div id="sec-print" class="form-section-title">8. SIMPAN DATA & CETAK</div>
+        <div class="modern-action-grid" style="margin-top:12px;">
+            <button onclick="saveToLocal()" class="modern-action action-save"><span>💾</span><div><b>Simpan Data Lokal</b><small>Menyimpan semua isian</small></div></button>
+            <button onclick="downloadPdf()" class="modern-action action-pdf"><span>📥</span><div><b>Download PDF Terpilih</b><small>Hanya dokumen yang dicentang</small></div></button>
+            <button onclick="updateSurat()" class="modern-action action-update"><span>🔄</span><div><b>Update Dokumen</b><small>Perbarui seluruh dokumen</small></div></button>
+        </div>
+
+        <div class="print-selector">
+            <div class="print-selector-header">
+                <div>
+                    <div class="print-selector-title">📋 DOKUMEN TERPILIH</div>
+                    <div class="print-selector-subtitle">Centang dokumen yang ingin dicetak atau diunduh.</div>
+                </div>
+                <div class="print-actions">
+                    <button type="button" class="select-pill select-all" onclick="selectAllDocuments()">☑ Pilih Semua</button>
+                    <button type="button" class="select-pill select-none" onclick="clearAllDocuments()">☐ Hapus Semua</button>
+                </div>
+            </div>
+            <div class="print-summary">
+                <span class="summary-icon">✓</span>
+                <div><b id="print-selected-count">0 dokumen dipilih</b><small>Dokumen yang tidak dicentang tidak akan ikut dicetak.</small></div>
+            </div>
+            <div class="print-doc-list" id="print-doc-list"></div>
+            <div class="print-panel-actions">
+                <button type="button" onclick="printSelectedDocuments()" class="panel-print-btn">🖨️ Cetak Dokumen Terpilih</button>
+                <button type="button" onclick="downloadPdf()" class="panel-pdf-btn">📥 Download PDF Terpilih</button>
+            </div>
+        </div>
+
+        <div id="status_msg" class="status-msg"></div>
+        <div style="font-size:8pt; color:#95a5a6; text-align:center; margin-top:6px;">
+            Semua isian form & tabel otomatis tersimpan di Local Storage browser Anda (tidak hilang saat tab ditutup).
+        </div>
+    </div>
+
+    <!-- DOKUMEN SI -->
+    <div id="doc-si" class="container">
+        <div class="doc-toolbar no-print"><button class="btn btn-blue btn-small" onclick="printDocument('doc-si')">🖨️ Cetak Dokumen Ini</button></div>
+        <div class="header">
+            <div class="logo-container"><img src="" id="out_logo" class="doc-logo"></div>
+            <div class="header-text">
+                <h3>PEMERINTAH KABUPATEN/KOTA <span id="out_kabupaten">MAJALENGKA</span></h3>
+                <h3>DINAS PENDIDIKAN</h3>
+                <h2><span id="out_nama_sekolah">SD NEGERI MAJALENGKA WETAN VIII</span></h2>
+                <p>Alamat : <span id="out_alamat_sekolah">Jln. K.H Abdul halim Nomor 5 Kel.Majalengka Wetan 45411</span> | Email : <span id="out_email_sekolah">wetan8s@yahoo.com</span></p>
+            </div>
+        </div>
+
+        <div class="document-title">STANDING INSTRUCTION</div>
+        <div style="text-align:center; font-size:11pt; font-weight:bold; color:#2c3e50; margin:-15px 0 15px 0;">
+            Periode: <span id="out_periode">Januari 2026</span>
+        </div>
+
+        <div class="meta-section">
+            <div class="meta-left">
+                <table class="table-meta">
+                    <tr><td width="80">Nomor</td><td>: <span id="out_no_surat"></span></td></tr>
+                    <tr><td>Sifat</td><td>: Penting</td></tr>
+                    <tr><td>Lampiran</td><td>: -</td></tr>
+                    <tr><td>Hal</td><td>: <b>Pemindahbukuan / Transfer</b></td></tr>
+                </table>
+            </div>
+            <div class="meta-right">
+                Majalengka, <span id="out_tgl"></span><br>
+                <b>Kepada Yth :</b><br>
+                <b>Bank BJB Cabang / KCP Majalengka</b><br>
+                <b>di</b><br>
+                <b>Tempat</b>
+            </div>
+        </div>
+
+        <p>Yang bertandatangan di bawah ini,</p>
+        <table class="identity-table">
+            <tr><td width="180">Nama</td><td>: 1. <span id="out_nama_ks"></span></td></tr>
+            <tr><td></td><td>: 2. <span id="out_nama_bend"></span></td></tr>
+            <tr><td>NIP</td><td>: 1. <span id="out_nip_ks"></span></td></tr>
+            <tr><td></td><td>: 2. <span id="out_nip_bend"></span></td></tr>
+            <tr><td>Atas Nama Rekening</td><td>: <span id="out_nama_sekolah_2"></span></td></tr>
+            <tr><td>No. Rekening</td><td>: <span id="out_rek_sekolah"></span></td></tr>
+        </table>
+
+        <p>Maka dengan ini kami mohon untuk melakukan pemindahbukuan sesuai rincian :</p>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th rowspan="2">No</th><th rowspan="2">Atas Nama Rekening</th><th rowspan="2">Nama Bank</th><th rowspan="2">No Rekening</th><th rowspan="2">Jumlah Bruto</th><th colspan="2">Pajak</th><th rowspan="2">Jumlah Netto</th><th rowspan="2">Ket</th>
+                </tr>
+                <tr><th>PPN</th><th>PPH</th></tr>
+            </thead>
+            <tbody id="out_tabel_body"></tbody>
+            <tfoot>
+                <tr style="font-weight: bold; background: #f9f9f9;">
+                    <td colspan="4">JUMLAH</td><td id="total_bruto"></td><td id="total_ppn"></td><td id="total_pph"></td><td id="total_netto"></td><td></td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div style="margin-top: 15px;">
+            <p style="margin: 2px 0;"><b>Catatan :</b> <span id="out_catatan"></span></p>
+            <p style="margin: 2px 0;"><b>Terbilang :</b> <span id="out_terbilang" style="font-style: italic;"></span></p>
+        </div>
+
+        <p style="margin-top: 15px;">Demikian Standing Instruction ini kami buat sebagaimana mestinya.</p>
+
+        <div class="sig-container">
+            <div class="sig-box">
+                Kepala Sekolah<br><span class="out_nama_sekolah_class"></span><br><br><br><br><br>
+                <b><u><span id="out_nama_ks_ttd"></span></u></b><br>NIP. <span id="out_nip_ks_ttd"></span>
+            </div>
+            <div class="sig-box">
+                Bendahara Pengeluaran<br><span class="out_nama_sekolah_class"></span><br><br><br><br><br>
+                <b><u><span id="out_nama_bend_ttd"></span></u></b><br>NIP. <span id="out_nip_bend_ttd"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- DOKUMEN SURAT KUASA (TEMPLATE BARU) -->
+    <div id="doc-kuasa" class="container">
+        <div class="doc-toolbar no-print"><button class="btn btn-blue btn-small" onclick="printDocument('doc-kuasa')">🖨️ Cetak Dokumen Ini</button></div>
+        <div class="kuasa-title">SURAT KUASA</div>
+        <div class="kuasa-subtitle">TENTANG <span class="out_judul_kuasa_class"></span></div>
+        <div class="kuasa-subtitle2">SUMBER DANA BOSP REGULER TAHUN ANGGARAN <span class="out_tahun_class"></span></div>
+
+        <p style="font-size:11pt; margin-bottom:12px;">Yang bertandatangan di bawah ini (selanjutnya disebut <b>PEMBERI KUASA</b>) :</p>
+        <table class="kuasa-table" id="kuasa_pemberi_table"></table>
+
+        <p style="font-size:11pt; margin:15px 0 10px 0;">Dengan ini memberi kuasa penuh kepada (selanjutnya disebut <b>PENERIMA KUASA</b>) :</p>
+        <table class="kuasa-table" id="kuasa_penerima_table"></table>
+
+        <p style="font-size:11pt; margin:15px 0 8px 0;"><b>UNTUK DAN ATAS NAMA PEMBERI KUASA BERTINDAK UNTUK :</b></p>
+        <div id="out_maksud_kuasa" style="font-size:11pt; line-height:1.5; margin-left:15px;"></div>
+
+        <p style="font-size:11pt; margin-top:15px; text-align:justify;">Surat Kuasa ini dibuat dengan sebenarnya, dalam keadaan sadar dan tanpa ada unsur paksaan dari pihak manapun, serta dipergunakan sebagaimana mestinya untuk kelancaran administrasi pertanggungjawaban keuangan Dana BOSP Reguler.</p>
+
+        <div class="kuasa-sig" style="margin-top:40px;">
+            <div class="kuasa-sig-box">
+                <span class="out_kab_lower_class"></span>, <span id="out_tgl_kuasa"></span><br>
+                <b>Penerima Kuasa,</b><br>
+                <span style="font-size:9pt;">(Materai 10.000)</span><br><br><br><br><br><br>
+                <b><u><span id="kuasa_ttd_penerima"></span></u></b>
+            </div>
+            <div class="kuasa-sig-box">
+                <b>Pemberi Kuasa,</b><br><br>
+                <span id="kuasa_ttd_pemberi_list" style="display:inline-block; text-align:left; line-height:2;"></span>
+            </div>
+        </div>
+
+        <div class="sig-container" style="margin-top:40px;">
+            <div class="sig-box" style="width:100%;">
+                Mengetahui,<br>Kepala Sekolah<br><span class="out_nama_sekolah_class"></span><br><br><br><br><br>
+                <b><u><span class="out_nama_ks_ttd_class"></span></u></b><br>NIP. <span class="out_nip_ks_ttd_class"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- SURAT PERNYATAAN TANGGUNG JAWAB MUTLAK -->
+    <div id="doc-sptjm" class="container">
+        <div class="doc-toolbar no-print"><button class="btn btn-blue btn-small" onclick="printDocument('doc-sptjm')">🖨️ Cetak Dokumen Ini</button></div>
+        <div class="kuasa-title">SURAT PERNYATAAN TANGGUNG JAWAB MUTLAK</div>
+        <div class="kuasa-subtitle">TENTANG <span class="out_judul_kuasa_class"></span></div>
+        <div class="kuasa-subtitle2">SUMBER DANA BOSP REGULER TAHUN ANGGARAN <span class="out_tahun_class"></span></div>
+
+        <p style="font-size:11pt;">Yang bertandatangan di bawah ini :</p>
+        <table class="kuasa-table" style="margin-left:15px;">
+            <tr><td width="130">Nama Lengkap</td><td>: <span id="sptjm_nama"></span></td></tr>
+            <tr><td>NIK</td><td>: <span id="sptjm_nik"></span></td></tr>
+            <tr><td>Jabatan</td><td>: <span id="sptjm_jabatan"></span></td></tr>
+            <tr><td>Alamat</td><td>: <span id="sptjm_alamat"></span></td></tr>
+            <tr><td>Nomor telepon/HP</td><td>: <span id="sptjm_telp"></span></td></tr>
+        </table>
+
+        <p style="font-size:11pt; text-align:justify; margin-top:12px;">Sehubungan dengan pelaksanaan kegiatan <span class="out_judul_kuasa_class" style="text-transform:none;"></span> yang bersumber dari Dana BOSP Reguler Tahun Anggaran <span class="out_tahun_class"></span> dengan ini saya menyatakan dengan sesungguhnya bahwa :</p>
+        <div style="font-size:11pt; text-align:justify; line-height:1.6; margin-left:15px;" id="sptjm_isi"></div>
+        <p style="font-size:11pt; text-align:justify; margin-top:12px;">Demikian Surat Pernyataan Tanggung Jawab Mutlak ini saya buat dengan sebenarnya, dalam keadaan sadar, tanpa ada unsur paksaan dari pihak manapun, dan untuk dipergunakan sebagai kelengkapan dokumen pertanggungjawaban keuangan Dana BOSP Reguler tahun anggaran <span class="out_tahun_class"></span>.</p>
+
+        <div class="kuasa-sig" style="margin-top:40px;">
+            <div class="kuasa-sig-box">
+                <span class="out_kab_lower_class"></span>, <span id="sptjm_tgl"></span><br>
+                Kepala Sekolah,<br><br><br><br><br><br>
+                <b><u><span class="out_nama_ks_ttd_class"></span></u></b><br>NIP. <span class="out_nip_ks_ttd_class"></span>
+            </div>
+            <div class="kuasa-sig-box">
+                <br><b>Yang Membuat Pernyataan</b><br>
+                <span style="font-size:9pt;">(<span id="sptjm_jabatan2"></span>)</span><br>
+                <span style="font-size:9pt;">(Materai 10.000)</span><br><br><br><br>
+                <b><u><span id="sptjm_ttd"></span></u></b><br>Nama
+            </div>
+        </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- DAFTAR PENERIMAAN UPAH KERJA TUKANG -->
+    <div id="doc-daftar-upah" class="container">
+        <div class="doc-toolbar no-print"><button class="btn btn-blue btn-small" onclick="printDocument('doc-daftar-upah')">🖨️ Cetak Dokumen Ini</button></div>
+        <div class="kuasa-title" style="font-size:12pt;">DAFTAR PENERIMAAN UPAH KERJA TUKANG</div>
+        <div class="kuasa-subtitle">TENTANG <span class="out_judul_kuasa_class"></span></div>
+        <div class="kuasa-subtitle2">SUMBER DANA BOSP REGULER TAHUN ANGGARAN <span class="out_tahun_class"></span></div>
+        <table class="data-table" style="font-size:9pt;">
+            <thead>
+                <tr>
+                    <th width="30">No</th><th>Nama</th><th width="105">Jabatan</th><th width="105">NIK</th><th width="105">No Rekening</th><th width="90">Jumlah Kotor (Rp)</th><th width="75">Pajak (Rp)</th><th width="95">Jumlah Diterima (Rp)</th>
+                </tr>
+            </thead>
+            <tbody id="out_tabel_upah"></tbody>
+            <tfoot>
+                <tr style="font-weight:bold; background:#f9f9f9;">
+                    <td colspan="5">JUMLAH</td>
+                    <td id="upah_tot_kotor"></td><td id="upah_tot_pajak"></td><td id="upah_tot_diterima"></td>
+                </tr>
+            </tfoot>
+        </table>
+        <div class="sig-container" style="margin-top:60px;">
+            <div class="sig-box" style="width:32%;">
+                Mengetahui,<br>Kepala Sekolah<br><br><br><br><br>
+                <b><u><span class="out_nama_ks_ttd_class"></span></u></b><br>NIP. <span class="out_nip_ks_ttd_class"></span>
+            </div>
+            <div class="sig-box" style="width:32%;">
+                <br>Koordinator Tukang/Pekerja<br><br><br><br><br>
+                <b><u><span id="upah_ttd_koor"></span></u></b>
+            </div>
+            <div class="sig-box" style="width:32%;">
+                <span class="out_kab_lower_class"></span>, <span id="upah_tgl"></span><br>
+                Bendahara BOSP<br><br><br><br><br>
+                <b><u><span class="out_nama_bend_ttd_class"></span></u></b><br>NIP. <span class="out_nip_bend_ttd_class"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ DOK PBJ: FORMAT TEMPLATE RESMI ============ -->
+
+    <!-- 1. DOKUMEN PERENCANAAN -->
+    <div class="page-break"></div>
+    <div id="doc-perencanaan" class="container">
+        <div class="doc-toolbar no-print"><button class="btn btn-blue btn-small" onclick="printDocument('doc-perencanaan')">🖨️ Cetak Dokumen Ini</button></div>
+        <div class="document-title">DOKUMEN PERENCANAAN</div>
+        <table class="table-meta" style="margin:10px 0; font-size:11pt;">
+            <tr><td width="240">Nama Satuan Pendidikan</td><td>: <span class="out_nama_sekolah_class"></span></td></tr>
+            <tr><td>Alamat Satuan Pendidikan</td><td>: <span class="out_alamat_sekolah_class"></span></td></tr>
+            <tr><td>Kategori Barang / Jasa</td><td>: <span id="out_kategori"></span></td></tr>
+        </table>
+        <table class="data-table" style="font-size:10pt;">
+            <thead><tr><th width="45">NO</th><th width="270">JENIS</th><th>KETERANGAN</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td style="text-align:left">Jumlah barang / jasa</td><td style="text-align:left" id="plan_jumlah"></td></tr>
+                <tr><td>2</td><td style="text-align:left">Spesifikasi/ruang lingkup barang jasa</td><td style="text-align:left" id="plan_spesifikasi"></td></tr>
+                <tr><td>3</td><td style="text-align:left">Waktu serah terima</td><td style="text-align:left" id="plan_waktu"></td></tr>
+                <tr><td>4</td><td style="text-align:left">Lokasi serah terima</td><td style="text-align:left" id="plan_lokasi"></td></tr>
+                <tr><td>5</td><td style="text-align:left">Alokasi anggaran</td><td style="text-align:left" id="plan_anggaran"></td></tr>
+                <tr>
+                    <td>6</td><td style="text-align:left">Persyaratan Penyedia</td>
+                    <td style="text-align:left">Perorangan/Badan Usaha<br>Memenuhi syarat sebagai berikut :<br>a. Identitas Penyedia<br>b. NPWP<br>c. NIB</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="sig-container" style="margin-top:60px;">
+            <div class="sig-box"></div>
+            <div class="sig-box">
+                <span class="out_kab_lower_class"></span>, <span class="out_tahun_class"></span><br>
+                Kepala Sekolah<br><br><br><br><br>
+                <b><u><span class="out_nama_ks_ttd_class"></span></u></b><br>NIP. <span class="out_nip_ks_ttd_class"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. DOKUMEN HASIL PEMBANDINGAN -->
+    <div class="page-break"></div>
+    <div id="doc-pembandingan" class="container">
+        <div class="doc-toolbar no-print"><button class="btn btn-blue btn-small" onclick="printDocument('doc-pembandingan')">🖨️ Cetak Dokumen Ini</button></div>
+        <div class="document-title">DOKUMEN HASIL PEMBANDINGAN</div>
+        <table class="table-meta" style="margin:10px 0; font-size:11pt;">
+            <tr><td width="240">Nama Satuan Pendidikan</td><td>: <span class="out_nama_sekolah_class"></span></td></tr>
+            <tr><td>Hasil Pembandingan</td><td>:</td></tr>
+        </table>
+        <div id="out_tabel_pembandingan"></div>
+        <div class="sig-container" style="margin-top:60px;">
+            <div class="sig-box"></div>
+            <div class="sig-box">
+                <span class="out_kab_lower_class"></span>, <span class="out_tahun_class"></span><br>
+                Kepala Sekolah<br><br><br><br><br>
+                <b><u><span class="out_nama_ks_ttd_class"></span></u></b><br>NIP. <span class="out_nip_ks_ttd_class"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. DOKUMEN HASIL NEGOSIASI -->
+    <div class="page-break"></div>
+    <div id="doc-negosiasi" class="container">
+        <div class="doc-toolbar no-print"><button class="btn btn-blue btn-small" onclick="printDocument('doc-negosiasi')">🖨️ Cetak Dokumen Ini</button></div>
+        <div class="document-title">DOKUMEN HASIL NEGOSIASI</div>
+        <table class="table-meta" style="margin:10px 0; font-size:11pt;">
+            <tr><td width="240">Nama Satuan Pendidikan</td><td>: <span class="out_nama_sekolah_class"></span></td></tr>
+            <tr><td>Alamat Satuan Pendidikan</td><td>: <span class="out_alamat_sekolah_class"></span></td></tr>
+            <tr><td>Nama Calon Penyedia</td><td>: <b><span id="neg_vendor"></span></b></td></tr>
+            <tr><td>Alamat Calon Penyedia</td><td>: <span id="neg_alamat"></span></td></tr>
+            <tr><td>Tanggal Terima Barang / Jasa</td><td>: <span id="neg_tgl_terima"></span></td></tr>
+        </table>
+        <p style="font-size:11pt; font-weight:bold;">Hasil Negosiasi :</p>
+        <table class="data-table" style="font-size:10pt;">
+            <thead>
+                <tr><th width="40">NO</th><th>Nama Produk</th><th width="85">Jumlah (QTY)</th><th width="120">Harga Penawaran</th><th width="120">Harga Negosiasi</th><th width="140">Keterangan</th></tr>
+            </thead>
+            <tbody id="out_tabel_negosiasi"></tbody>
+            <tfoot>
+                <tr style="font-weight:bold; background:#f9f9f9;"><td colspan="5" style="text-align:left">Biaya Pengiriman</td><td>-</td></tr>
+                <tr style="font-weight:bold; background:#f9f9f9;"><td colspan="3">JUMLAH</td><td id="total_neg_awal"></td><td id="total_neg"></td><td></td></tr>
+            </tfoot>
+        </table>
+        <p style="font-size:9pt; font-style:italic;">Catatan : Kolom Keterangan dapat diisi sesuai dengan hasil negosiasi, meliputi jumlah termin pembayaran dan hal lain sesuai kesepakatan para pihak.</p>
+        <div class="sig-container" style="margin-top:50px;">
+            <div class="sig-box">
+                Calon Penyedia,<br><br><br><br><br><br>
+                <b><u><span id="neg_ttd"></span></u></b>
+            </div>
+            <div class="sig-box">
+                <span class="out_kab_lower_class"></span>, <span id="out_tgl_neg"></span><br>
+                Kepala Sekolah<br><br><br><br><br>
+                <b><u><span class="out_nama_ks_ttd_class"></span></u></b><br>NIP. <span class="out_nip_ks_ttd_class"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. SURAT PERJANJIAN KESEPAKATAN BERSAMA -->
+    <div class="page-break"></div>
+    <div id="doc-kesepakatan" class="container">
+        <div class="doc-toolbar no-print"><button class="btn btn-blue btn-small" onclick="printDocument('doc-kesepakatan')">🖨️ Cetak Dokumen Ini</button></div>
+        <div class="header">
+            <div class="logo-container"><img src="" class="doc-logo"></div>
+            <div class="header-text">
+                <h3>PEMERINTAH KABUPATEN/KOTA <span class="out_kabupaten_class"></span></h3>
+                <h3>DINAS PENDIDIKAN</h3>
+                <h2><span class="out_nama_sekolah_class"></span></h2>
+                <p>Alamat : <span class="out_alamat_sekolah_class"></span> | Email : <span class="out_email_sekolah_class"></span></p>
+            </div>
+        </div>
+        <div class="document-title" style="font-size:13pt;">SURAT PERJANJIAN KESEPAKATAN BERSAMA<br>
+            <span style="font-size:11pt; font-weight:normal; text-decoration:none;">TENTANG PELAKSANAAN BELANJA DANA BOSP TAHUN ANGGARAN <span class="out_tahun_class"></span></span>
+        </div>
+        <div class="kuasa-nomor">NOMOR : <span id="out_no_spj"></span></div>
+        <p style="font-size:11pt; text-align:justify;">Pada hari ini <b><span id="spj_hari"></span></b> tanggal <b><span id="spj_tgl"></span></b> bulan <b><span id="spj_bulan"></span></b> tahun <b><span id="spj_tahun_terbilang"></span></b> bertempat di <span class="out_nama_sekolah_class"></span>, yang bertanda tangan di bawah ini :</p>
+        <table class="table-meta" style="margin:8px 0; font-size:11pt;">
+            <tr><td width="35">1.</td><td width="110">Nama</td><td>: <span class="out_nama_ks_class"></span></td></tr>
+            <tr><td></td><td>Jabatan</td><td>: Kepala <span class="out_nama_sekolah_class"></span> / Selaku Penanggungjawab BOSP</td></tr>
+            <tr><td></td><td>Alamat</td><td>: <span class="out_alamat_sekolah_class"></span></td></tr>
+        </table>
+        <p style="font-size:11pt;">Selanjutnya disebut sebagai <b>Pihak Pertama (PIHAK PERTAMA)</b></p>
+        <table class="table-meta" style="margin:8px 0; font-size:11pt;">
+            <tr><td width="35">2.</td><td width="110">Nama</td><td>: <span id="spj_nama_pihak2"></span></td></tr>
+            <tr><td></td><td>Jabatan</td><td>: <span id="spj_jabatan_pihak2"></span></td></tr>
+            <tr><td></td><td>Nama Usaha</td><td>: <b><span id="spj_usaha"></span></b></td></tr>
+            <tr><td></td><td>Alamat Usaha</td><td>: <span id="spj_alamat_pihak2"></span></td></tr>
+        </table>
+        <p style="font-size:11pt;">Selanjutnya disebut sebagai <b>Pihak Kedua (PIHAK KEDUA)</b></p>
+        <p style="font-size:11pt; text-align:justify;">Kedua belah pihak secara bersama-sama sepakat untuk mengikatkan diri dalam Perjanjian Kesepakatan Bersama Pengadaan Barang/Jasa yang bersumber dari Dana Bantuan Operasional Satuan Pendidikan (BOSP) Tahun Anggaran <span class="out_tahun_class"></span> dengan ketentuan dan syarat-syarat sebagai berikut :</p>
+        <p style="font-size:11pt; font-weight:bold; text-align:center;">PASAL 1<br>RUANG LINGKUP PEKERJAAN</p>
+        <p style="font-size:11pt; text-align:justify;">PIHAK KEDUA sepakat untuk menyediakan dan menyerahkan barang/jasa kepada PIHAK PERTAMA, dan PIHAK PERTAMA sepakat untuk melakukan pembelian/pengadaan atas barang/jasa dengan rincian sebagai berikut :</p>
+        <table class="data-table" style="font-size:10pt;">
+            <thead><tr><th width="40">No</th><th>Nama Barang/Spesifikasi Teknis</th><th width="65">Volume</th><th width="75">Satuan</th><th width="115">Harga Satuan (Rp)</th><th width="115">Jumlah (Rp)</th></tr></thead>
+            <tbody id="out_tabel_spj"></tbody>
+            <tfoot><tr style="font-weight:bold; background:#f9f9f9;"><td colspan="5">J U M L A H</td><td id="total_spj"></td></tr></tfoot>
+        </table>
+        <p style="font-size:11pt;"><b>Terbilang :</b> <i><span id="terbilang_spj"></span></i></p>
+        <p style="font-size:11pt; font-weight:bold; text-align:center;">PASAL 2<br>JANGKA WAKTU PELAKSANAAN</p>
+        <div style="font-size:11pt; text-align:justify; line-height:1.6;">
+            1. Pekerjaan pengadaan barang/jasa ini dimulai sejak ditandatanganinya Surat Perjanjian ini dan harus diselesaikan selambat-lambatnya pada tanggal <b><span id="spj_tgl_selesai"></span></b>.<br>
+            2. Penyerahan barang/jasa dilakukan di <span class="out_nama_sekolah_class"></span>.<br>
+            3. Segala risiko kerusakan atau kehilangan barang dalam proses pengiriman sepenuhnya menjadi tanggung jawab PIHAK KEDUA hingga barang diterima secara resmi oleh tim pemeriksa sekolah.
+        </div>
+        <p style="font-size:11pt; font-weight:bold; text-align:center;">PASAL 3<br>PEMBAYARAN</p>
+        <div style="font-size:11pt; text-align:justify; line-height:1.6;">
+            1. Pembayaran atas pengadaan barang/jasa tersebut akan dilakukan oleh PIHAK PERTAMA kepada PIHAK KEDUA melalui mekanisme pengelolaan Dana BOSP setelah barang diterima dengan baik, lengkap, sesuai spesifikasi dan ditandai dengan Berita Acara Serah Terima (BAST).<br>
+            2. Pembayaran harus dilengkapi dengan dokumen pendukung : a. Kuitansi asli; b. Faktur pajak asli (jika penyedia merupakan PKP); c. Berita Acara Serah Terima (BAST) Barang/Jasa; d. Faktur pembelian/Nota Asli.<br>
+            3. Segala bentuk perpajakan yang timbul atas kesepakatan ini menjadi tanggung jawab PIHAK KEDUA dan akan dipotong langsung oleh PIHAK PERTAMA sesuai peraturan perpajakan yang berlaku.
+        </div>
+        <p style="font-size:11pt; font-weight:bold; text-align:center;">PASAL 4<br>HAK, KEWAJIBAN DAN PENYELESAIAN PERSELISIHAN</p>
+        <div style="font-size:11pt; text-align:justify; line-height:1.6;">
+            1. PIHAK KEDUA berkewajiban menyerahkan barang/jasa tepat waktu dengan kualitas/spesifikasi yang tidak dikurangi atau menyimpang dari kesepakatan.<br>
+            2. PIHAK PERTAMA berhak melakukan pemeriksaan atas barang/jasa yang dikirim dan berhak menolak jika tidak sesuai spesifikasi.<br>
+            3. Biaya yang timbul akibat dari ketidaksesuaian barang/jasa merupakan tanggung jawab PIHAK KEDUA.<br>
+            4. Apabila terjadi keterlambatan penyelesaian pekerjaan di luar masa yang disepakati (kecuali <i>force majeure</i>), PIHAK KEDUA dikenakan denda keterlambatan sebesar 1/1000 (satu perseribu) dari total harga untuk setiap hari keterlambatan.<br>
+            5. Segala perselisihan yang timbul akan diselesaikan secara musyawarah dan mufakat antara kedua belah pihak.
+        </div>
+        <p style="font-size:11pt; text-align:justify; margin-top:12px;">Demikian Surat Perjanjian Kesepakatan Bersama ini dibuat rangkap 2 (dua) dengan materai cukup dan memiliki kekuatan hukum yang sama untuk dipergunakan sebagaimana mestinya.</p>
+        <div class="sig-container" style="margin-top:40px;">
+            <div class="sig-box">
+                PIHAK KEDUA,<br>Penyedia Barang/Jasa<br><br><br><br><br>
+                <b><u><span id="spj_ttd_pihak2"></span></u></b>
+            </div>
+            <div class="sig-box">
+                PIHAK PERTAMA,<br>Kepala Sekolah<br><br><br><br><br>
+                <b><u><span class="out_nama_ks_ttd_class"></span></u></b><br>NIP. <span class="out_nip_ks_ttd_class"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. SURAT PESANAN (SP) -->
+    <div class="page-break"></div>
+    <div id="doc-sp" class="container">
+        <div class="doc-toolbar no-print"><button class="btn btn-blue btn-small" onclick="printDocument('doc-sp')">🖨️ Cetak Dokumen Ini</button></div>
+        <div class="document-title">SURAT PESANAN (SP)</div>
+        <div class="kuasa-nomor">Nomor : <span id="out_no_sp"></span></div>
+        <p style="font-size:11pt;"><b>Yang bertandatangan di bawah ini :</b></p>
+        <table class="table-meta" style="margin:6px 0 10px 20px; font-size:11pt;">
+            <tr><td width="110">Nama</td><td>: <span class="out_nama_ks_class"></span></td></tr>
+            <tr><td>Jabatan</td><td>: Kepala Sekolah</td></tr>
+            <tr><td>Instansi</td><td>: <span class="out_nama_sekolah_class"></span></td></tr>
+            <tr><td>Alamat</td><td>: <span class="out_alamat_sekolah_class"></span></td></tr>
+        </table>
+        <p style="font-size:11pt;">Dengan ini mengajukan pesanan barang/jasa kepada :</p>
+        <table class="table-meta" style="margin:6px 0 10px 20px; font-size:11pt;">
+            <tr><td width="180">Nama Toko/Perusahaan</td><td>: <b><span id="sp_vendor"></span></b></td></tr>
+            <tr><td>Alamat Toko</td><td>: <span id="sp_alamat"></span></td></tr>
+            <tr><td>No. Telepon</td><td>: <span id="sp_telp"></span></td></tr>
+        </table>
+        <p style="font-size:11pt;">Jenis dan rincian barang yang dipesan adalah sebagai berikut :</p>
+        <table class="data-table" style="font-size:10pt;">
+            <thead><tr><th width="40">No</th><th>Nama Barang / Spesifikasi</th><th width="65">Jumlah</th><th width="75">Satuan</th><th width="115">Harga Satuan (Rp)</th><th width="115">Total Harga (Rp)</th></tr></thead>
+            <tbody id="out_tabel_sp"></tbody>
+            <tfoot>
+                <tr style="font-weight:bold; background:#f9f9f9;"><td colspan="5">JUMLAH</td><td id="total_sp"></td></tr>
+                <tr style="font-weight:bold; background:#f9f9f9;"><td colspan="5">PPN</td><td>-</td></tr>
+                <tr style="font-weight:bold; background:#f9f9f9;"><td colspan="5">TOTAL</td><td id="total_sp_all"></td></tr>
+            </tfoot>
+        </table>
+        <p style="font-size:11pt;"><b>Terbilang :</b> <i><span id="terbilang_sp"></span></i></p>
+        <div style="font-size:10.5pt; margin-top:10px; text-align:justify; line-height:1.6;">
+            <b>Ketentuan Syarat dan Penyerahan :</b><br>
+            1. <b>Waktu Pengiriman :</b> Barang harus sudah diterima paling lambat tanggal <b><span id="sp_tgl_terima"></span></b>.<br>
+            2. <b>Alamat Pengiriman :</b> <span class="out_nama_sekolah_class"></span>, <span class="out_alamat_sekolah_class"></span>.<br>
+            3. <b>Sistem Pembayaran :</b> Pembayaran akan dilakukan secara transfer bank setelah seluruh barang diterima dan diperiksa dalam keadaan baik dan lengkap.<br>
+            4. Pembayaran wajib dipotong pajak sesuai dengan ketentuan peraturan perpajakan yang berlaku (PPN dan/atau PPh).
+        </div>
+        <div class="sig-container" style="margin-top:50px;">
+            <div class="sig-box">
+                Menerima &amp; Menyetujui,<br>Pihak Penyedia / Toko<br><br><br><br><br><br>
+                <b><u><span id="sp_ttd"></span></u></b><br>
+                <span style="font-size:9pt;">(Tanda tangan &amp; stempel toko)</span>
+            </div>
+            <div class="sig-box">
+                <span class="out_kab_lower_class"></span>, <span id="out_tgl_sp"></span><br>
+                Memesan,<br><span class="out_nama_sekolah_class"></span><br><br><br><br><br>
+                <b><u><span class="out_nama_ks_ttd_class"></span></u></b><br>NIP. <span class="out_nip_ks_ttd_class"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. SURAT PERINTAH KERJA (SPK) -->
+    <div class="page-break"></div>
+    <div id="doc-spk" class="container">
+        <div class="doc-toolbar no-print"><button class="btn btn-blue btn-small" onclick="printDocument('doc-spk')">🖨️ Cetak Dokumen Ini</button></div>
+        <div class="document-title">SURAT PERINTAH KERJA (SPK)</div>
+        <table class="table-meta" style="margin:12px 0; font-size:11pt;">
+            <tr><td width="230">Nama Satuan Pendidikan</td><td>: <span class="out_nama_sekolah_class"></span></td></tr>
+            <tr><td>No SPK</td><td>: <span id="out_no_spk"></span></td></tr>
+            <tr><td>Tanggal SPK</td><td>: <span id="out_tgl_spk"></span></td></tr>
+            <tr><td>Paket Pekerjaan</td><td>: <span id="spk_paket"></span></td></tr>
+            <tr><td>Tanggal Negosiasi</td><td>: <span id="spk_tgl_negosiasi"></span></td></tr>
+        </table>
+        <p style="font-size:10.5pt; text-align:justify;">SPK ini mulai berlaku efektif terhitung sejak tanggal ditetapkan dan penyelesaian keseluruhan pekerjaan sebagaimana dimaksud dalam SPK ini.</p>
+        <table class="table-meta" style="margin:8px 0; font-size:11pt;">
+            <tr><td width="230">WAKTU PELAKSANAAN PEKERJAAN</td><td>: <span id="spk_waktu"></span></td></tr>
+            <tr><td>WAKTU PENYELESAIAN PEKERJAAN</td><td>: <span id="spk_selesai"></span></td></tr>
+        </table>
+        <p style="font-size:11pt; font-weight:bold;">RINCIAN PEKERJAAN</p>
+        <table class="data-table" style="font-size:10pt;">
+            <thead><tr><th width="40">No</th><th>Uraian Barang/Jasa</th><th width="140">Spesifikasi/Satuan Ukuran</th><th width="115">Harga Satuan</th><th width="115">Total Harga</th></tr></thead>
+            <tbody id="out_tabel_spk"></tbody>
+            <tfoot>
+                <tr style="font-weight:bold; background:#f9f9f9;"><td colspan="4">PPN</td><td>-</td></tr>
+                <tr style="font-weight:bold; background:#f9f9f9;"><td colspan="4">Biaya Pengiriman</td><td>-</td></tr>
+                <tr style="font-weight:bold; background:#f9f9f9;"><td colspan="4">Asuransi</td><td>-</td></tr>
+                <tr style="font-weight:bold; background:#f9f9f9;"><td colspan="4">Total Pembayaran</td><td id="total_spk"></td></tr>
+            </tfoot>
+        </table>
+        <p style="font-size:11pt;"><b>Terbilang :</b> <i><span id="terbilang_spk"></span></i></p>
+        <p style="font-size:10.5pt; text-align:justify;"><b>INSTRUKSI KE PENYEDIA :</b><br>Penagihan hanya dapat dilakukan setelah penyelesaian pekerjaan yang diperintahkan dalam SPK ini dan dibuktikan dengan Surat Hasil Pemeriksaan dan Berita Acara Serah Terima.</p>
+        <div class="sig-container" style="margin-top:50px;">
+            <div class="sig-box">
+                Penyedia<br><br><br><br><br><br>
+                <b><u><span id="spk_ttd"></span></u></b>
+            </div>
+            <div class="sig-box">
+                Kepala Sekolah<br><span class="out_nama_sekolah_class"></span><br><br><br><br><br>
+                <b><u><span class="out_nama_ks_ttd_class"></span></u></b><br>NIP. <span class="out_nip_ks_ttd_class"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. SURAT HASIL PEMERIKSAAN -->
+    <div class="page-break"></div>
+    <div id="doc-shp" class="container">
+        <div class="doc-toolbar no-print"><button class="btn btn-blue btn-small" onclick="printDocument('doc-shp')">🖨️ Cetak Dokumen Ini</button></div>
+        <div class="document-title">SURAT HASIL PEMERIKSAAN</div>
+        <div class="kuasa-nomor">Nomor : <span id="out_no_shp"></span></div>
+        <p style="font-size:11pt;">Pada hari ini, <b><span id="shp_hari"></span></b> tanggal <b><span id="shp_tgl"></span></b>, sesuai dengan :</p>
+        <table class="table-meta" style="margin:6px 0 10px 20px; font-size:11pt;">
+            <tr><td width="200">Nomor Surat Pemesanan</td><td>: <span id="shp_no_sp"></span></td></tr>
+            <tr><td>Tanggal</td><td>: <span id="shp_tgl_sp"></span></td></tr>
+            <tr><td>Nama Pekerjaan</td><td>: <span id="shp_pekerjaan"></span></td></tr>
+            <tr><td>Tahun</td><td>: <span id="shp_tahun"></span></td></tr>
+        </table>
+        <p style="font-size:11pt;">Yang bertandatangan di bawah ini :</p>
+        <table class="table-meta" style="margin:6px 0 10px 20px; font-size:11pt;">
+            <tr><td width="200">Nama</td><td>: <span class="out_nama_bend_class"></span></td></tr>
+            <tr><td>Jabatan</td><td>: Bendahara Pengeluaran</td></tr>
+            <tr><td>Nama Satuan Pendidikan</td><td>: <span class="out_nama_sekolah_class"></span></td></tr>
+            <tr><td>Alamat Satuan Pendidikan</td><td>: <span class="out_alamat_sekolah_class"></span></td></tr>
+            <tr><td>No. Telepon</td><td>: <span id="shp_telp"></span></td></tr>
+        </table>
+        <p style="font-size:11pt;">Telah melakukan pemeriksaan terhadap hasil pekerjaan sesuai dengan Surat Pemesanan (SP) dimaksud dengan rincian berikut :</p>
+        <table class="data-table" style="font-size:10pt;">
+            <thead><tr><th width="40">No</th><th>Nama Barang/Jasa</th><th width="90">Jumlah</th><th width="140">Spesifikasi</th><th width="120">Kondisi</th></tr></thead>
+            <tbody id="out_tabel_shp"></tbody>
+        </table>
+        <p style="font-size:11pt; margin-top:12px;">Demikian Surat Pemeriksaan Hasil Pekerjaan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana seharusnya.</p>
+        <div class="sig-container" style="margin-top:50px;">
+            <div class="sig-box" style="width:32%;">
+                PIHAK KEDUA,<br>Penyedia<br><br><br><br><br>
+                <b><u><span id="shp_ttd_penyedia"></span></u></b>
+            </div>
+            <div class="sig-box" style="width:32%;">
+                PEMERIKSA BARANG,<br>Bendahara Pengeluaran<br><br><br><br><br>
+                <b><u><span class="out_nama_bend_ttd_class"></span></u></b><br>NIP. <span class="out_nip_bend_ttd_class"></span>
+            </div>
+            <div class="sig-box" style="width:32%;">
+                PIHAK KESATU,<br>Kepala Sekolah<br><br><br><br><br>
+                <b><u><span class="out_nama_ks_ttd_class"></span></u></b><br>NIP. <span class="out_nip_ks_ttd_class"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 8. BERITA ACARA PEMERIKSAAN TEKNIS -->
+    <div class="page-break"></div>
+    <div id="doc-ba" class="container">
+        <div class="doc-toolbar no-print"><button class="btn btn-blue btn-small" onclick="printDocument('doc-ba')">🖨️ Cetak Dokumen Ini</button></div>
+        <div class="header">
+            <div class="logo-container"><img src="" class="doc-logo"></div>
+            <div class="header-text">
+                <h3>PEMERINTAH KABUPATEN/KOTA <span class="out_kabupaten_class"></span></h3>
+                <h3>DINAS PENDIDIKAN</h3>
+                <h2><span class="out_nama_sekolah_class"></span></h2>
+                <p>Alamat : <span class="out_alamat_sekolah_class"></span> | Email : <span class="out_email_sekolah_class"></span></p>
+            </div>
+        </div>
+        <div class="document-title" style="font-size:13pt;">BERITA ACARA PEMERIKSAAN TEKNIS HASIL PENGADAAN BARANG/JASA</div>
+        <div class="kuasa-nomor">Nomor : <span id="out_no_ba"></span></div>
+        <p style="font-size:11pt; text-align:justify;">Pada hari ini <b><span id="ba_hari"></span></b> tanggal <b><span id="ba_tgl"></span></b>, kami yang bertandatangan di bawah ini Tim Teknis Pemeriksa Hasil Pekerjaan Pengadaan Barang/Jasa Pemerintah untuk Pengadaan Barang Jasa/Umum di <span class="out_nama_sekolah_class"></span> yang dibentuk berdasarkan Keputusan Kepala Sekolah <span class="out_nama_sekolah_class"></span> Nomor : <span id="ba_no_sk"></span> Tanggal <span id="ba_tgl_sk"></span> Tentang Penetapan Tim Teknis Pemeriksa Hasil Pekerjaan Pengadaan Barang/Jasa Pemerintah untuk Pengadaan Barang Jasa/Umum di <span class="out_nama_sekolah_class"></span> Tahun Anggaran <span class="out_tahun_class"></span>, terdiri dari :</p>
+        <table class="table-meta" style="margin:8px 0 10px 20px; font-size:11pt;">
+            <tr><td width="35">1.</td><td width="260"><span class="out_nama_ks_class"></span></td><td>: KETUA</td></tr>
+            <tr><td>2.</td><td><span class="out_nama_bend_class"></span></td><td>: SEKRETARIS</td></tr>
+            <tr><td>3.</td><td>....................</td><td>: ANGGOTA</td></tr>
+        </table>
+        <p style="font-size:11pt; text-align:justify;">Telah memeriksa dengan teliti hasil Pekerjaan Belanja <span id="ba_belanja"></span> pada <span class="out_nama_sekolah_class"></span> Tahun Anggaran <span class="out_tahun_class"></span> dari Toko/CV. <b><span id="ba_vendor"></span></b>, berdasarkan Surat Pesanan (SP) Nomor : <span id="ba_no_sp"></span> Tanggal <span id="ba_tgl_sp"></span>, yang dilaksanakan dari mulai <span id="ba_mulai"></span> sampai dengan tanggal <span id="ba_sampai"></span>, dengan hasil sebagai berikut :</p>
+        <table class="data-table" style="font-size:10pt;">
+            <thead><tr><th>Nama Barang/Jasa</th><th width="50">Vol</th><th width="75">Satuan</th><th width="115">Harga Satuan</th><th width="115">Jumlah</th><th width="130">Spesifikasi</th></tr></thead>
+            <tbody id="out_tabel_ba"></tbody>
+            <tfoot><tr style="font-weight:bold; background:#f9f9f9;"><td colspan="4">JUMLAH</td><td id="total_ba"></td><td></td></tr></tfoot>
+        </table>
+        <p style="font-size:11pt; margin-top:10px;"><b>Kesimpulan : DITERIMA</b> / TIDAK DAPAT DITERIMA *) <span style="font-size:9pt;">coret yang tidak perlu</span></p>
+        <p style="font-size:11pt;">Demikian Berita Acara Pemeriksaan Teknis Hasil Pengadaan Barang/Jasa ini kami buat dengan sesungguhnya untuk dipergunakan sebagaimana mestinya.</p>
+        <table class="data-table" style="font-size:10pt; margin-top:20px;">
+            <thead><tr><th width="45">No</th><th>Nama</th><th width="150">Kedudukan dalam Tim</th><th width="150">Tanda tangan</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td style="text-align:left"><span class="out_nama_ks_class"></span></td><td>Ketua</td><td></td></tr>
+                <tr><td>2</td><td style="text-align:left"><span class="out_nama_bend_class"></span></td><td>Sekretaris</td><td></td></tr>
+                <tr><td>3</td><td style="text-align:left">....................</td><td>Anggota</td><td></td></tr>
+            </tbody>
+        </table>
+        <div class="sig-container" style="margin-top:25px;">
+            <div class="sig-box" style="width:100%;">
+                Mengetahui,<br>Kepala Sekolah<br><span class="out_nama_sekolah_class"></span><br><br><br><br><br>
+                <b><u><span class="out_nama_ks_ttd_class"></span></u></b><br>NIP. <span class="out_nip_ks_ttd_class"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 9. KUITANSI BELANJA: TEMPLATE RINGKAS SESUAI CONTOH -->
+    <div class="page-break"></div>
+    <div id="doc-kuitansi" class="container kuitansi-sheet">
+        <div class="doc-toolbar no-print"><button class="btn btn-blue btn-small" onclick="printDocument('doc-kuitansi')">🖨️ Cetak Dokumen Ini</button></div>
+        <div class="kuitansi-paper">
+            <div class="kuitansi-heading">K W I T A N S I</div>
+            <table class="kuitansi-fields">
+                <tr><td>Nomor</td><td>:</td><td><span id="out_no_kwitansi"></span></td></tr>
+                <tr><td>Sudah terima dari</td><td>:</td><td>Bendahara <span class="out_nama_sekolah_class"></span></td></tr>
+                <tr><td>Uang Sejumlah</td><td>:</td><td><span id="kwit_terbilang"></span></td></tr>
+                <tr><td>Untuk Pembayaran</td><td>:</td><td>Belanja <span id="kwit_untuk"></span></td></tr>
+                <tr><td>Kode Rekening</td><td>:</td><td><span id="kwit_kode_rek"></span></td></tr>
+                <tr><td>Jumlah</td><td>:</td><td><b>Rp <span id="kwit_nominal"></span>,-</b></td></tr>
+            </table>
+            <div class="kuitansi-date"><span class="out_kab_lower_class"></span>, <span id="out_tgl_kwit"></span></div>
+            <div class="kuitansi-signatures">
+                <div class="kuitansi-sign">
+                    <div>Mengetahui/Menyetujui</div>
+                    <div>Kepala Sekolah</div>
+                    <div class="kuitansi-sign-space"></div>
+                    <b><u><span class="out_nama_ks_ttd_class"></span></u></b>
+                    <div>NIP. <span class="out_nip_ks_ttd_class"></span></div>
+                </div>
+                <div class="kuitansi-sign">
+                    <div>Lunas Bayar</div>
+                    <div>Bendahara</div>
+                    <div class="kuitansi-sign-space"></div>
+                    <b><u><span class="out_nama_bend_ttd_class"></span></u></b>
+                    <div>NIP. <span class="out_nip_bend_ttd_class"></span></div>
+                </div>
+                <div class="kuitansi-sign">
+                    <div>Yang menerima</div>
+                    <div class="kuitansi-sign-space"></div>
+                    <b><u><span id="kwit_ttd"></span></u></b>
+                    <div>NIK. <span id="kwit_nik_ttd"></span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 10. SK TIM PELAKSANA BELANJA BARANG/JASA -->
+    <div class="page-break"></div>
+    <div id="doc-sk" class="container">
+        <div class="doc-toolbar no-print"><button class="btn btn-blue btn-small" onclick="printDocument('doc-sk')">🖨️ Cetak Dokumen Ini</button></div>
+        <div class="header">
+            <div class="logo-container"><img src="" class="doc-logo"></div>
+            <div class="header-text">
+                <h3>PEMERINTAH KABUPATEN/KOTA <span class="out_kabupaten_class"></span></h3>
+                <h3>DINAS PENDIDIKAN</h3>
+                <h2><span class="out_nama_sekolah_class"></span></h2>
+                <p>Alamat : <span class="out_alamat_sekolah_class"></span> | Email : <span class="out_email_sekolah_class"></span></p>
+            </div>
+        </div>
+        <div class="document-title" style="font-size:12.5pt; margin-bottom:5px;">KEPUTUSAN KEPALA SEKOLAH <span class="out_nama_sekolah_class"></span></div>
+        <div class="kuasa-nomor" style="margin-bottom:5px;">NOMOR : <span id="out_no_sk"></span></div>
+        <div class="document-title" style="font-size:12pt; margin-top:10px;">TENTANG<br>PENETAPAN TIM PELAKSANA BELANJA BARANG/JASA DI <span class="out_nama_sekolah_class"></span><br>TAHUN ANGGARAN <span class="out_tahun_class"></span></div>
+        <p style="font-size:11pt; margin-top:15px;">KEPALA SEKOLAH <span class="out_nama_sekolah_class"></span>,</p>
+        <table style="width:100%; border-collapse:collapse; font-size:10.5pt; margin:8px 0;">
+            <tr>
+                <td style="width:110px; vertical-align:top;">Menimbang</td>
+                <td style="width:15px; vertical-align:top;">:</td>
+                <td style="vertical-align:top; text-align:justify;">a. bahwa dalam rangka meningkatkan efektivitas dan efisiensi belanja barang/jasa di sekolah, perlu membentuk Tim Pelaksana Belanja Barang/Jasa di <span class="out_nama_sekolah_class"></span>;<br><br>b. bahwa berdasarkan pertimbangan sebagaimana dimaksud pada huruf a, perlu menetapkan Keputusan Kepala Sekolah tentang Penetapan Tim Pelaksana Belanja Barang/Jasa di <span class="out_nama_sekolah_class"></span> Tahun Anggaran <span class="out_tahun_class"></span>.</td>
+            </tr>
+            <tr>
+                <td style="vertical-align:top; padding-top:10px;">Mengingat</td>
+                <td style="vertical-align:top; padding-top:10px;">:</td>
+                <td style="vertical-align:top; padding-top:10px; text-align:justify;">
+                    1. Undang-Undang Nomor 14 Tahun 1950 tentang Pembentukan Daerah-Daerah Kabupaten Dalam Lingkungan Propinsi Djawa Barat sebagaimana telah diubah dengan Undang-Undang Nomor 4 Tahun 1968;<br>
+                    2. Undang-Undang Nomor 28 Tahun 1999 Tentang Penyelenggaraan Negara Yang Bersih Dan Bebas Dari Korupsi, Kolusi Dan Nepotisme;<br>
+                    3. Undang-Undang Nomor 20 Tahun 2003 tentang Sistem Pendidikan Nasional;<br>
+                    4. Undang-Undang Nomor 15 Tahun 2004 tentang Pemeriksaan Pengelolaan dan Tanggung Jawab Keuangan Negara;<br>
+                    5. Undang-Undang Nomor 33 Tahun 2004 tentang Perimbangan Keuangan Antara Pemerintah Pusat dan Pemerintah Daerah;<br>
+                    6. Undang-Undang Nomor 12 Tahun 2011 tentang Pembentukan Peraturan Perundang-undangan;<br>
+                    7. Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah;<br>
+                    8. Peraturan Pemerintah Nomor 17 Tahun 2010 tentang Pengelolaan dan Penyelenggaraan Pendidikan;<br>
+                    9. Peraturan Pemerintah Nomor 32 Tahun 2013 tentang Perubahan Atas Peraturan Pemerintah Nomor 19 Tahun 2005 tentang Standar Nasional Pendidikan;<br>
+                    10. Peraturan Pemerintah Nomor 27 Tahun 2014 tentang Pengelolaan Barang Milik Negara/Daerah;<br>
+                    11. Peraturan Pemerintah Nomor 12 Tahun 2019 tentang Pengelolaan Keuangan Daerah;<br>
+                    12. Peraturan Pemerintah Nomor 18 Tahun 2016 tentang Perangkat Daerah;<br>
+                    13. Peraturan Presiden Nomor 12 Tahun 2021 tentang Pengadaan Barang/Jasa Pemerintah;<br>
+                    14. Peraturan Menteri Dalam Negeri Nomor 77 Tahun 2020 Tentang Pedoman Teknis Pengelolaan Keuangan Daerah;<br>
+                    15. Peraturan Menteri Pendidikan Dasar dan Menengah Nomor 8 Tahun 2026 tentang Petunjuk Teknis Pengelolaan Dana Bantuan Operasional Satuan Pendidikan;<br>
+                    16. Peraturan Menteri Pendidikan Dasar dan Menengah Nomor 15 Tahun 2026 tentang Tata Cara Belanja Barang/Jasa Oleh Satuan Pendidikan.
+                </td>
+            </tr>
+        </table>
+        <p style="font-size:11pt; font-weight:bold; text-align:center;">MEMUTUSKAN :</p>
+        <table style="width:100%; border-collapse:collapse; font-size:10.5pt; margin:8px 0;">
+            <tr>
+                <td style="width:110px; vertical-align:top;">KESATU</td>
+                <td style="width:15px; vertical-align:top;">:</td>
+                <td style="vertical-align:top; text-align:justify;">Menetapkan Tim Pelaksana Belanja Barang/Jasa di <span class="out_nama_sekolah_class"></span> Tahun Anggaran <span class="out_tahun_class"></span> dengan susunan sebagaimana tercantum dalam Lampiran Keputusan ini.</td>
+            </tr>
+            <tr>
+                <td style="vertical-align:top; padding-top:8px;">KEDUA</td>
+                <td style="vertical-align:top; padding-top:8px;">:</td>
+                <td style="vertical-align:top; padding-top:8px; text-align:justify;">Tugas Pokok dan Wewenang Tim Teknis sebagaimana dimaksud dalam Diktum KESATU adalah sebagai berikut :<br>1. Melakukan pemeriksaan hasil pekerjaan pengadaan barang/jasa dan memastikan sesuai dengan spesifikasi yang tercantum dalam kontrak;<br>2. Membuat dan menandatangani Berita Acara Hasil Pemeriksaan.</td>
+            </tr>
+            <tr>
+                <td style="vertical-align:top; padding-top:8px;">KETIGA</td>
+                <td style="vertical-align:top; padding-top:8px;">:</td>
+                <td style="vertical-align:top; padding-top:8px; text-align:justify;">Keputusan ini mulai berlaku sejak tanggal ditetapkan dengan ketentuan apabila dikemudian hari ternyata terdapat kekeliruan di dalamnya akan diadakan perubahan sebagaimana mestinya.</td>
+            </tr>
+        </table>
+        <div class="sig-container" style="margin-top:30px;">
+            <div class="sig-box"></div>
+            <div class="sig-box">
+                Ditetapkan di <span class="out_kab_lower_class"></span><br>
+                pada tanggal: <span id="sk_tgl"></span><br><br>
+                KEPALA SEKOLAH<br><br><br><br><br>
+                <b><u><span class="out_nama_ks_ttd_class"></span></u></b><br>NIP. <span class="out_nip_ks_ttd_class"></span>
+            </div>
+        </div>
+        <div class="page-break"></div>
+        <div class="document-title" style="font-size:12pt;">LAMPIRAN<br><span style="font-size:10.5pt; font-weight:normal; text-decoration:none;">KEPUTUSAN KEPALA SEKOLAH <span class="out_nama_sekolah_class"></span> NOMOR <span id="sk_no_lamp"></span><br>TANGGAL <span id="sk_tgl_lamp"></span><br>TENTANG PENETAPAN TIM PELAKSANA BELANJA BARANG/JASA DI <span class="out_nama_sekolah_class"></span> TAHUN ANGGARAN <span class="out_tahun_class"></span></span></div>
+        <p style="font-size:11pt; font-weight:bold; text-align:center;">SUSUNAN TIM PELAKSANA BELANJA BARANG/JASA DI <span class="out_nama_sekolah_class"></span><br>TAHUN ANGGARAN <span class="out_tahun_class"></span></p>
+        <table class="table-meta" style="margin:15px 0 0 30px; font-size:11pt;">
+            <tr><td width="110">Ketua</td><td width="20">:</td><td><span class="out_nama_ks_class"></span></td></tr>
+            <tr><td style="padding-top:8px;">Sekretaris</td><td style="padding-top:8px;">:</td><td style="padding-top:8px;"><span class="out_nama_bend_class"></span></td></tr>
+            <tr><td style="padding-top:8px;">Anggota</td><td style="padding-top:8px;">:</td><td style="padding-top:8px;">1. ....................<br>2. ....................</td></tr>
+        </table>
+        <div class="sig-container" style="margin-top:60px;">
+            <div class="sig-box"></div>
+            <div class="sig-box">
+                KEPALA SEKOLAH<br><br><br><br><br>
+                <b><u><span class="out_nama_ks_ttd_class"></span></u></b><br>NIP. <span class="out_nip_ks_ttd_class"></span>
+            </div>
+        </div>
+    </div>
+    <div class="page-break"></div>
+
+    <!-- 11. BAST -->
+    <div id="doc-bast" class="container">
+        <div class="doc-toolbar no-print"><button class="btn btn-blue btn-small" onclick="printDocument('doc-bast')">🖨️ Cetak Dokumen Ini</button></div>
+        <div class="document-title">BERITA ACARA SERAH TERIMA BARANG/JASA (BAST)</div>
+        <div class="kuasa-nomor">Nomor : <span id="out_no_bast"></span></div>
+        <p style="font-size:11pt; text-align:justify;">Pada hari ini <b><span id="bast_hari"></span></b> tanggal <b><span id="bast_tgl"></span></b>, kami yang bertandatangan di bawah ini :</p>
+        <table class="table-meta" style="margin:6px 0 10px 20px; font-size:11pt;">
+            <tr><td width="35">1.</td><td width="130">Nama</td><td>: <span class="out_nama_ks_class"></span></td></tr>
+            <tr><td></td><td>Jabatan</td><td>: Kepala Sekolah / Kuasa Pengguna Anggaran</td></tr>
+            <tr><td></td><td>Alamat</td><td>: <span class="out_alamat_sekolah_class"></span></td></tr>
+            <tr><td></td><td colspan="2">selanjutnya disebut <b>PIHAK PERTAMA</b></td></tr>
+            <tr><td style="padding-top:8px;">2.</td><td style="padding-top:8px;">Nama</td><td style="padding-top:8px;">: <span id="bast_nama_pihak2"></span></td></tr>
+            <tr><td></td><td>Jabatan</td><td>: <span id="bast_jabatan_pihak2"></span></td></tr>
+            <tr><td></td><td>Alamat</td><td>: <span id="bast_alamat_pihak2"></span></td></tr>
+            <tr><td></td><td colspan="2">selanjutnya disebut <b>PIHAK KEDUA</b></td></tr>
+        </table>
+        <p style="font-size:11pt; text-align:justify;">Telah melakukan serah terima barang/jasa sesuai Surat Pesanan (SP) Nomor : <span id="bast_no_sp"></span> Tanggal <span id="bast_tgl_sp"></span>, dengan rincian sebagai berikut :</p>
+        <table class="data-table" style="font-size:10pt;">
+            <thead><tr><th width="40">No</th><th>Nama Barang/Jasa</th><th width="55">Vol</th><th width="70">Satuan</th><th width="115">Harga Satuan (Rp)</th><th width="115">Jumlah (Rp)</th></tr></thead>
+            <tbody id="out_tabel_bast"></tbody>
+            <tfoot><tr style="font-weight:bold; background:#f9f9f9;"><td colspan="5">JUMLAH</td><td id="total_bast"></td></tr></tfoot>
+        </table>
+        <p style="font-size:11pt;"><b>Terbilang :</b> <i><span id="terbilang_bast"></span></i></p>
+        <p style="font-size:11pt; text-align:justify; margin-top:10px;">PIHAK PERTAMA menyatakan telah menerima barang/jasa tersebut dari PIHAK KEDUA dalam keadaan baik, lengkap, dan sesuai spesifikasi. Dengan ditandatanganinya Berita Acara ini, maka tanggung jawab atas barang/jasa beralih sepenuhnya kepada PIHAK PERTAMA, dan PIHAK KEDUA berhak atas pembayaran sesuai kesepakatan.</p>
+        <p style="font-size:11pt;">Demikian Berita Acara Serah Terima ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya.</p>
+        <div class="sig-container" style="margin-top:50px;">
+            <div class="sig-box">
+                PIHAK KEDUA,<br>Penyedia Barang/Jasa<br><br><br><br><br>
+                <b><u><span id="bast_ttd_pihak2"></span></u></b>
+            </div>
+            <div class="sig-box">
+                PIHAK PERTAMA,<br>Kepala Sekolah<br><br><br><br><br>
+                <b><u><span class="out_nama_ks_ttd_class"></span></u></b><br>NIP. <span class="out_nip_ks_ttd_class"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- 12. NOTA PEMBELIAN -->
+    <div id="doc-nota" class="container">
+        <div class="doc-toolbar no-print"><button class="btn btn-blue btn-small" onclick="printDocument('doc-nota')">🖨️ Cetak Dokumen Ini</button></div>
+        <div style="border:2px solid #000; padding:15px 20px;">
+            <div style="text-align:center;">
+                <div style="font-size:15pt; font-weight:bold; letter-spacing:1px;" id="nota_vendor"></div>
+                <div style="font-size:10pt;" id="nota_alamat"></div>
+                <div style="font-size:10pt;">Telp. <span id="nota_telp"></span></div>
+            </div>
+            <div style="text-align:center; font-weight:bold; font-size:13pt; margin:10px 0; letter-spacing:2px;">NOTA PEMBELIAN</div>
+            <table class="table-meta" style="font-size:10.5pt; margin-bottom:8px;">
+                <tr><td width="120">No. Nota</td><td>: <span id="nota_no"></span></td></tr>
+                <tr><td>Tanggal</td><td>: <span id="nota_tgl"></span></td></tr>
+                <tr><td>Kepada Yth</td><td>: <span id="nota_sekolah"></span></td></tr>
+            </table>
+            <table class="data-table" style="font-size:10pt;">
+                <thead><tr><th width="35">No</th><th>Nama Barang</th><th width="55">Qty</th><th width="110">Harga (Rp)</th><th width="120">Total (Rp)</th></tr></thead>
+                <tbody id="out_tabel_nota"></tbody>
+                <tfoot><tr style="font-weight:bold; background:#f9f9f9;"><td colspan="4">TOTAL</td><td id="total_nota"></td></tr></tfoot>
+            </table>
+            <p style="font-size:10.5pt; margin-top:8px;"><b>Terbilang :</b> <i><span id="terbilang_nota"></span></i></p>
+            <div style="display:flex; justify-content:space-between; margin-top:35px; font-size:10.5pt; text-align:center;">
+                <div>
+                    Penerima,<br><br><br><br><br>
+                    ( <span id="nota_ttd_penerima"></span> )
+                </div>
+                <div>
+                    <span class="out_kab_lower_class"></span>, <span id="nota_tgl_ttd"></span><br>
+                    Hormat Kami,<br><br><br><br>
+                    <b><u><span id="nota_ttd"></span></u></b>
+                </div>
+            </div>
+        </div>
+        <p style="font-size:10pt; font-weight:bold; margin-top:18px;">Lampiran : Foto / salinan Nota Pembelian Asli dari Toko/CV</p>
+        <div id="nota_foto_box" style="margin-top:6px;"></div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- 13. DAFTAR HADIR RAPAT -->
+    <div id="doc-hadir" class="container">
+        <div class="doc-toolbar no-print"><button class="btn btn-blue btn-small" onclick="printDocument('doc-hadir')">🖨️ Cetak Dokumen Ini</button></div>
+        <div class="document-title">DAFTAR HADIR</div>
+        <table class="table-meta" style="margin:10px 0; font-size:11pt;">
+            <tr><td width="150">Nama Kegiatan</td><td>: <span id="hadir_acara"></span></td></tr>
+            <tr><td>Hari / Tanggal</td><td>: <span id="hadir_hari"></span> / <span id="hadir_tgl"></span></td></tr>
+            <tr><td>Tempat</td><td>: <span class="out_nama_sekolah_class"></span></td></tr>
+        </table>
+        <table class="data-table" style="font-size:10pt;">
+            <thead><tr><th width="35">No</th><th>Nama</th><th width="110">NIP/NIK</th><th width="140">Jabatan</th><th width="150">Tanda Tangan</th></tr></thead>
+            <tbody id="out_tabel_hadir"></tbody>
+        </table>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- 14. NOTULA RAPAT -->
+    <div id="doc-notula" class="container">
+        <div class="doc-toolbar no-print"><button class="btn btn-blue btn-small" onclick="printDocument('doc-notula')">🖨️ Cetak Dokumen Ini</button></div>
+        <div class="document-title">NOTULA RAPAT</div>
+        <table class="table-meta" style="margin:10px 0; font-size:11pt;">
+            <tr><td width="150">Nama Kegiatan</td><td>: <span id="notula_acara"></span></td></tr>
+            <tr><td>Hari / Tanggal</td><td>: <span id="notula_hari"></span> / <span id="notula_tgl"></span></td></tr>
+            <tr><td>Tempat</td><td>: <span class="out_nama_sekolah_class"></span></td></tr>
+            <tr><td>Pimpinan Rapat</td><td>: <span class="out_nama_ks_class"></span> (Kepala Sekolah)</td></tr>
+            <tr><td>Notulis</td><td>: <span class="out_nama_bend_class"></span> (Bendahara)</td></tr>
+        </table>
+        <p style="font-size:11pt; font-weight:bold; margin-top:12px;">PESERTA RAPAT :</p>
+        <div id="notula_peserta" style="font-size:11pt; margin-left:15px; line-height:1.6;"></div>
+        <p style="font-size:11pt; font-weight:bold; margin-top:12px;">HASIL RAPAT / PEMBAHASAN :</p>
+        <div id="notula_isi" style="font-size:11pt; margin-left:15px;"></div>
+        <div class="sig-container" style="margin-top:60px;">
+            <div class="sig-box">
+                Pimpinan Rapat,<br><br><br><br><br>
+                <b><u><span class="out_nama_ks_ttd_class"></span></u></b><br>NIP. <span class="out_nip_ks_ttd_class"></span>
+            </div>
+            <div class="sig-box">
+                Notulis,<br><br><br><br><br>
+                <b><u><span class="out_nama_bend_ttd_class"></span></u></b><br>NIP. <span class="out_nip_bend_ttd_class"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- 15. FOTO DOKUMENTASI KEGIATAN -->
+    <div id="doc-foto" class="container">
+        <div class="doc-toolbar no-print"><button class="btn btn-blue btn-small" onclick="printDocument('doc-foto')">🖨️ Cetak Dokumen Ini</button></div>
+        <div class="document-title">DOKUMENTASI FOTO KEGIATAN</div>
+        <table class="table-meta" style="margin:10px 0; font-size:11pt;">
+            <tr><td width="150">Nama Kegiatan</td><td>: <span id="foto_kegiatan"></span></td></tr>
+            <tr><td>Periode</td><td>: <span class="out_periode_class"></span></td></tr>
+            <tr><td>Satuan Pendidikan</td><td>: <span class="out_nama_sekolah_class"></span></td></tr>
+            <tr><td>Tahun Anggaran</td><td>: <span class="out_tahun_class"></span></td></tr>
+        </table>
+        <div class="foto-grid" id="foto_grid"></div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- 16. BUKTI SETORAN PAJAK DAERAH (PB1) - OPSIONAL -->
+    <div id="doc-pb1" class="container">
+        <div class="doc-toolbar no-print"><button class="btn btn-blue btn-small" onclick="printDocument('doc-pb1')">🖨️ Cetak Dokumen Ini</button></div>
+        <div class="document-title">BUKTI SETORAN PAJAK DAERAH (PB1)</div>
+        <table class="table-meta" style="margin:14px 0; font-size:11pt;">
+            <tr><td width="190">Nomor Bukti Setoran</td><td>: <span id="pb1_no"></span></td></tr>
+            <tr><td>Tanggal Setoran</td><td>: <span id="pb1_tgl"></span></td></tr>
+            <tr><td>NIK / NPWP Wajib Pajak</td><td>: <span id="pb1_npwp"></span></td></tr>
+            <tr><td>Jenis Pajak</td><td>: <span id="pb1_jenis"></span></td></tr>
+            <tr><td>Masa Pajak</td><td>: <span id="pb1_masa"></span></td></tr>
+            <tr><td>Jumlah Setoran</td><td>: <b>Rp <span id="pb1_jumlah"></span></b></td></tr>
+            <tr><td>Terbilang</td><td>: <i><span id="pb1_terbilang"></span></i></td></tr>
+        </table>
+        <p style="font-size:10pt; font-weight:bold; margin-top:18px;">Bukti asli Bukti Setoran Pajak Daerah (PB1) :</p>
+        <div id="pb1_foto_box" style="margin-top:6px;"></div>
+        <p style="font-size:9pt; color:#555; font-style:italic; margin-top:8px;">Catatan: Dokumen ini bersifat opsional dan hanya diperlukan apabila transaksi dikenakan Pajak Daerah (misalnya PB1 atas jasa makan/minum).</p>
+    </div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script>
+    // Konfigurasi Firebase milik Anda
+    const firebaseConfig = {
+      apiKey: "AIzaSyCiisKPOQJ4VfVbav6a62z_bdzGd82SKKU",
+      authDomain: "bosp2026-b2bcc.firebaseapp.com",
+      projectId: "bosp2026-b2bcc",
+      storageBucket: "bosp2026-b2bcc.firebasestorage.app",
+      messagingSenderId: "943444395157",
+      appId: "1:943444395157:web:5b186e98a4ad89deb6079c",
+      measurementId: "G-GCE6EPB0VN"
+    };
+    let firebaseApp, firebaseAuth, firebaseDb, currentSchoolUser = null;
+    try {
+      firebaseApp = firebase.initializeApp(firebaseConfig);
+      firebaseAuth = firebase.auth();
+      firebaseDb = firebase.firestore();
+      firebaseDb.enablePersistence({synchronizeTabs:true}).catch(()=>{});
+    } catch (e) {
+      console.error('Firebase initialization:', e);
+    }
+
+    function authMessage(msg, isError=false) {
+      const el=document.getElementById('login-error');
+      const st=document.getElementById('auth-status');
+      if(el) { el.textContent=isError ? msg : ''; }
+      if(st) st.textContent=isError ? '' : msg;
+    }
+    function showAuthPanel(panel) {
+      ['login','register','reset'].forEach(x=>{
+        const el=document.getElementById('auth-'+x);
+        if(el) el.style.display=x===panel?'block':'none';
+      });
+      authMessage('');
+    }
+    function cleanNpsn(v){ return String(v||'').replace(/\\D/g,'').trim(); }
+    function schoolEmail(npsn){ return cleanNpsn(npsn); } // fungsi lama tidak dipakai untuk autentikasi email
+
+    async function registrasiSekolah() {
+      try {
+        if(!firebaseAuth || !firebaseDb) throw new Error('Firebase belum siap. Periksa konfigurasi dan koneksi internet.');
+        const npsn=cleanNpsn(document.getElementById('reg-npsn').value);
+        const nama=document.getElementById('reg-school').value.trim();
+        const email=document.getElementById('reg-email').value.trim().toLowerCase();
+        const pass=document.getElementById('reg-password').value;
+        const pass2=document.getElementById('reg-password2').value;
+        if(!/^\\d{8}$/.test(npsn)) throw new Error('NPSN harus terdiri dari 8 angka.');
+        if(!nama) throw new Error('Nama sekolah wajib diisi.');
+        if(!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) throw new Error('Masukkan email aktif yang benar untuk pemulihan password.');
+        if(pass.length<6) throw new Error('Password minimal 6 karakter.');
+        if(pass!==pass2) throw new Error('Konfirmasi password tidak sama.');
+        authMessage('Memproses registrasi...');
+        const existing=await firebaseDb.collection('schoolAccounts').doc(npsn).get();
+        if(existing.exists) throw new Error('NPSN ini sudah terdaftar. Silakan login atau hubungi pengelola.');
+        const cred=await firebaseAuth.createUserWithEmailAndPassword(email,pass);
+        try {
+          await firebaseDb.collection('schoolAccounts').doc(npsn).set({
+            uid:cred.user.uid, npsn, namaSekolah:nama,
+            createdAt:firebase.firestore.FieldValue.serverTimestamp()
+          });
+        } catch(err) {
+          await cred.user.delete().catch(()=>{});
+          throw err;
+        }
+        await cred.user.sendEmailVerification().catch(()=>{});
+        document.getElementById('login-npsn').value=npsn;
+        document.getElementById('login-email').value=email;
+        document.getElementById('login-password').value=pass;
+        authMessage('Registrasi berhasil. Jika email verifikasi dikirim, silakan periksa email. Anda dapat masuk sekarang.');
+        showAuthPanel('login');
+      } catch(e) { authMessage(authErrorText(e),true); }
+    }
+
+    function authErrorText(e) {
+      const c=e && e.code;
+      const map={
+        'auth/email-already-in-use':'Akun NPSN ini sudah terdaftar.',
+        'auth/invalid-email':'Format email akun tidak valid.',
+        'auth/weak-password':'Password terlalu lemah; gunakan minimal 6 karakter.',
+        'auth/invalid-credential':'NPSN atau password salah.',
+        'auth/wrong-password':'NPSN atau password salah.',
+        'auth/user-not-found':'Akun belum terdaftar.',
+        'auth/too-many-requests':'Terlalu banyak percobaan. Coba lagi nanti.',
+        'auth/network-request-failed':'Koneksi internet bermasalah.',
+        'permission-denied':'Akses Firestore ditolak. Periksa Firebase Security Rules.'
+      };
+      return map[c] || (e && e.message) || 'Terjadi kesalahan. Periksa pengaturan Firebase.';
+    }
+
+    async function loginSekolah() {
+      try {
+        if(!firebaseAuth || !firebaseDb) throw new Error('Firebase belum siap. Periksa konfigurasi dan koneksi internet.');
+        const npsn=cleanNpsn(document.getElementById('login-npsn').value);
+        const email=document.getElementById('login-email').value.trim().toLowerCase();
+        const pass=document.getElementById('login-password').value;
+        if(!/^\\d{8}$/.test(npsn)) throw new Error('Masukkan NPSN yang terdiri dari 8 angka.');
+        if(!email) throw new Error('Email terdaftar wajib diisi.');
+        if(!pass) throw new Error('Password wajib diisi.');
+        authMessage('Sedang masuk dan mengambil data online...');
+        const cred=await firebaseAuth.signInWithEmailAndPassword(email,pass);
+        const snap=await firebaseDb.collection('schoolAccounts').doc(npsn).get();
+        if(!snap.exists) { await firebaseAuth.signOut(); throw new Error('NPSN belum terdaftar.'); }
+        const profile=snap.data();
+        if(profile.uid!==cred.user.uid || String(profile.npsn)!==npsn) { await firebaseAuth.signOut(); throw new Error('NPSN tidak cocok dengan akun yang masuk.'); }
+        currentSchoolUser={uid:cred.user.uid,npsn,namaSekolah:profile.namaSekolah||''};
+        await loadSchoolCloudData();
+        const schoolName=document.getElementById('in_nama_sekolah');
+        if(schoolName && profile.namaSekolah) {
+          if(!localStorage.getItem('si_form_data')) schoolName.value=profile.namaSekolah;
+          updateDashboardSchoolName();
+        }
+        document.getElementById('login-screen').style.display='none';
+        document.getElementById('app-wrapper').style.display='block';
+        initApp();
+        authMessage('');
+      } catch(e) { authMessage(authErrorText(e),true); }
+    }
+
+    async function kirimResetPassword() {
+      try {
+        if(!firebaseAuth || !firebaseDb) throw new Error('Firebase belum siap.');
+        const npsn=cleanNpsn(document.getElementById('reset-npsn').value);
+        const email=document.getElementById('reset-email').value.trim().toLowerCase();
+        if(!/^\\d{8}$/.test(npsn)) throw new Error('Masukkan NPSN 8 angka.');
+        if(!email) throw new Error('Masukkan email pemulihan yang terdaftar.');
+        authMessage('Mengirim tautan pemulihan password...');
+        await firebaseAuth.sendPasswordResetEmail(email, {
+          url: location.origin + location.pathname,
+          handleCodeInApp: false
+        });
+        authMessage('Tautan reset password telah dikirim ke email akun. Periksa Inbox/Spam.');
+      } catch(e) { authMessage(authErrorText(e),true); }
+    }
+
+    // Sinkronisasi key data aplikasi per sekolah ke Firestore.
+    // Foto/logo sengaja dikecualikan karena ukuran gambar dapat melampaui batas dokumen.
+    const CLOUD_EXCLUDED_KEYS = /^(si_logo_data|si_foto_.*)$/;
+    let cloudSyncReady=false, cloudWriteTimer=null;
+    async function loadSchoolCloudData() {
+      if(!currentSchoolUser) return;
+      const ref=firebaseDb.collection('schoolAccounts').doc(currentSchoolUser.npsn).collection('appData');
+      const snap=await ref.get();
+      const remoteKeys=new Set();
+      snap.forEach(doc=>{
+        remoteKeys.add(doc.id);
+        const data=doc.data();
+        if(data && Object.prototype.hasOwnProperty.call(data,'value')) {
+          try { localStorage.setItem(doc.id, JSON.stringify(data.value)); } catch(e) {}
+        }
+      });
+      // Unggah data lokal yang belum ada di cloud; cloud menjadi sumber utama jika key sudah ada.
+      const batch=firebaseDb.batch();
+      let count=0;
+      for(let i=0;i<localStorage.length;i++){
+        const key=localStorage.key(i);
+        if(!key || CLOUD_EXCLUDED_KEYS.test(key) || remoteKeys.has(key)) continue;
+        try {
+          const value=JSON.parse(localStorage.getItem(key));
+          batch.set(ref.doc(key),{value,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+          count++;
+          if(count>=400) break;
+        } catch(e) {}
+      }
+      if(count) await batch.commit();
+      cloudSyncReady=true;
+    }
+    function scheduleCloudSave(key,value,remove=false) {
+      if(!currentSchoolUser || !cloudSyncReady || !key || CLOUD_EXCLUDED_KEYS.test(key)) return;
+      clearTimeout(cloudWriteTimer);
+      cloudWriteTimer=setTimeout(async()=>{
+        try {
+          const doc=firebaseDb.collection('schoolAccounts').doc(currentSchoolUser.npsn).collection('appData').doc(key);
+          if(remove) await doc.delete();
+          else {
+            let parsed;
+            try { parsed=JSON.parse(value); } catch(e) { parsed=value; }
+            await doc.set({value:parsed,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+          }
+        } catch(e) { console.error('Gagal sinkronisasi cloud:',e); }
+      },500);
+    }
+    // Pantau penyimpanan lokal agar perubahan yang dibuat oleh fitur lama tetap tersinkron.
+    const originalLocalSetItem=Storage.prototype.setItem;
+    Storage.prototype.setItem=function(key,value){
+      originalLocalSetItem.call(this,key,value);
+      if(this===window.localStorage) scheduleCloudSave(String(key),String(value),false);
+    };
+    const originalLocalRemoveItem=Storage.prototype.removeItem;
+    Storage.prototype.removeItem=function(key){
+      originalLocalRemoveItem.call(this,key);
+      if(this===window.localStorage) scheduleCloudSave(String(key),'',true);
+    };
+
+    // ========== FUNGSI LOGIN ==========
+    function checkPassword() { return loginSekolah(); }
+    function checkEnter(event) { if(event.key==='Enter') loginSekolah(); }
+
+    // ========== DATA DEFAULT ==========
+    const defaultRapbsData = [
+        { nama: "ATK Penggandaan", jumlah: 91100, ket: "ATK" },
+        { nama: "Jamuan Makan Peserta Diklat (Pramuka)", jumlah: 165000, ket: "Kegiatan Pramuka" },
+        { nama: "Jamuan Makan Peserta Diklat (Koordinasi)", jumlah: 825000, ket: "Koordinasi" },
+        { nama: "Jamuan Makan Peserta Diklat (KKG)", jumlah: 40000, ket: "KKG" },
+        { nama: "Belanja Modal Buku Umum Perpustakaan", jumlah: 7636000, ket: "Buku Perpustakaan" },
+        { nama: "Kertas HVS A4 70 gram", jumlah: 60000, ket: "ATK" },
+        { nama: "Amplop Besar Putih", jumlah: 31300, ket: "ATK" },
+        { nama: "Spanduk", jumlah: 150000, ket: "Cetak" },
+        { nama: "Langganan Listrik", jumlah: 75000, ket: "Listrik" },
+        { nama: "Langganan Internet", jumlah: 275000, ket: "Internet" },
+        { nama: "Surat Kabar Kompas", jumlah: 35000, ket: "Koran" },
+        { nama: "Honor Penjaga Kebersihan", jumlah: 1000000, ket: "Honor" }
+    ];
+
+    const defaultRekeningData = [
+        { id: 1, nama: "SITI ROKAYAH", bank: "BJB", rek: "0005755549100" },
+        { id: 2, nama: "KARYADI, S.Pd", bank: "BJB", rek: "0120233130100" }
+    ];
+
+    let rekeningList = [];
+    let logoDataUri = '';
+    let belanjaItems = [];
+    let nextId = 1;
+    let nextRekId = 1;
+    let currentPeriodKey = '';
+    let isDirty = false;
+
+    function updatePeriodIndicator() {
+        const period = getCurrentPeriod();
+        const allData = JSON.parse(localStorage.getItem('si_belanja_periode') || '{}');
+        const exists = !!allData[period];
+        const el = document.getElementById('period_indicator');
+        if (el) {
+            el.innerHTML = '📅 Periode Aktif: <b>' + period + '</b> ' + (exists ? '<span style="color:#2ecc71;">✓ Tersimpan</span>' : '<span style="color:#e74c3c;">● Belum Tersimpan</span>');
+        }
+    }
+
+    // ========== AUTO SAVE & LOAD ==========
+    const FORM_IDS = ['in_kabupaten','in_nama_sekolah','in_nama_ks','in_nip_ks','in_nama_bend','in_nip_bend',
+        'in_rek_sekolah','in_alamat_sekolah','in_email_sekolah','in_telp_sekolah','in_no_surat','in_tgl',
+        'in_nama_penjual','in_nik_penjual','in_jabatan_penjual','in_alamat_penjual','in_telp_penjual',
+        'in_catatan','in_terbilang','in_kategori','in_nama_pekerjaan','in_kode_rek',
+        'in_vendor1','in_vendor2','in_vendor3','in_no_po','in_no_spk','in_no_spj','in_no_sk','in_no_ba',
+        'in_no_invoice','in_bank_penjual','in_rek_penjual','in_hari','in_tgl_terima','in_bulan','in_tahun',
+        'in_judul_kuasa','in_maksud_kuasa','in_nama_kuasa2','in_jabatan_kuasa2','in_alamat_kuasa2','in_nik_kuasa2','in_telp_kuasa2',
+        'in_acara_rapat','in_agenda_notula','in_no_pb1','in_jenis_pajak','in_pb1_jumlah',
+        'in_foto_cap_1','in_foto_cap_2','in_foto_cap_3','in_foto_cap_4','in_foto_cap_5','in_foto_cap_6'];
+
+    function autoSave() {
+        const data = {};
+        FORM_IDS.forEach(id => { const el = document.getElementById(id); if (el) data[id] = el.value; });
+        const chk = document.getElementById('in_sertakan_checklist');
+        data.in_sertakan_checklist = chk ? chk.checked : true;
+        const chkPb1 = document.getElementById('in_sertakan_pb1');
+        data.in_sertakan_pb1 = chkPb1 ? chkPb1.checked : false;
+        data.rapbs_text = document.getElementById('rapbs_input').value;
+        localStorage.setItem('si_form_data', JSON.stringify(data));
+    }
+
+    function saveToLocal() {
+        autoSave();
+        showStatus('✅ Semua data berhasil disimpan ke lokal browser!', false);
+    }
+
+    function loadFormData() {
+        const saved = localStorage.getItem('si_form_data');
+        if (!saved) return;
+        const data = JSON.parse(saved);
+        Object.keys(data).forEach(k => {
+            const el = document.getElementById(k);
+            if (!el) return;
+            if (el.type === 'checkbox') el.checked = data[k]; else el.value = data[k];
+        });
+    }
+
+    function resetAllData() {
+        if (confirm('Yakin ingin mereset SEMUA data sekolah, pejabat, belanja, rekening, dan periode?')) {
+            localStorage.removeItem('si_form_data');
+            localStorage.removeItem('si_belanja_data');
+            localStorage.removeItem('si_belanja_periode');
+            localStorage.removeItem('si_rapbs_rekening');
+            localStorage.removeItem('si_logo_data');
+            ['si_kuasa_data','si_peserta_data','si_foto_nota','si_foto_pb1','si_foto_1','si_foto_2','si_foto_3','si_foto_4','si_foto_5','si_foto_6'].forEach(function(k){ localStorage.removeItem(k); });
+            location.reload();
+        }
+    }
+
+    // ========== LOGO ==========
+    function previewLogo(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                logoDataUri = e.target.result;
+                localStorage.setItem('si_logo_data', logoDataUri);
+                document.querySelectorAll('.doc-logo').forEach(function(im){ im.src = logoDataUri; });
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function loadLogo() {
+        const savedLogo = localStorage.getItem('si_logo_data');
+        if (savedLogo) {
+            logoDataUri = savedLogo;
+            document.querySelectorAll('.doc-logo').forEach(function(im){ im.src = savedLogo; });
+        }
+    }
+
+    // ========== FORMAT & TERBILANG DIPERBAIKI ==========
+    function fmtNumber(n) { return new Intl.NumberFormat('id-ID').format(n); }
+    function fmtRupiah(n) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n); }
+
+    function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+
+    const KONSTAN_ANGKA = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'];
+
+    function terbilangRekursif(n) {
+        n = Math.floor(Math.abs(n));
+        if (n < 12) return KONSTAN_ANGKA[n];
+        if (n < 20) return terbilangRekursif(n - 10) + ' belas';
+        if (n < 100) return terbilangRekursif(Math.floor(n / 10)) + ' puluh' + (n % 10 ? ' ' + terbilangRekursif(n % 10) : '');
+        if (n < 200) return 'seratus' + (n - 100 > 0 ? ' ' + terbilangRekursif(n - 100) : '');
+        if (n < 1000) return terbilangRekursif(Math.floor(n / 100)) + ' ratus' + (n % 100 > 0 ? ' ' + terbilangRekursif(n % 100) : '');
+        if (n < 2000) return 'seribu' + (n - 1000 > 0 ? ' ' + terbilangRekursif(n - 1000) : '');
+        if (n < 1000000) return terbilangRekursif(Math.floor(n / 1000)) + ' ribu' + (n % 1000 > 0 ? ' ' + terbilangRekursif(n % 1000) : '');
+        if (n < 1000000000) return terbilangRekursif(Math.floor(n / 1000000)) + ' juta' + (n % 1000000 > 0 ? ' ' + terbilangRekursif(n % 1000000) : '');
+        if (n < 1000000000000) return terbilangRekursif(Math.floor(n / 1000000000)) + ' miliar' + (n % 1000000000 > 0 ? ' ' + terbilangRekursif(n % 1000000000) : '');
+        if (n < 1000000000000000) return terbilangRekursif(Math.floor(n / 1000000000000)) + ' triliun' + (n % 1000000000000 > 0 ? ' ' + terbilangRekursif(n % 1000000000000) : '');
+        return 'Angka terlalu besar';
+    }
+
+    function angkaKeTerbilang(n) {
+        if (n === 0) return 'nol rupiah';
+        const teks = terbilangRekursif(n);
+        return teks.replace(/\s+/g, ' ').trim() + ' rupiah';
+    }
+
+    function showStatus(msg, isError) {
+        const el = document.getElementById('status_msg');
+        el.innerText = msg;
+        el.className = 'status-msg ' + (isError ? 'status-error' : 'status-success');
+        el.style.display = 'block';
+        setTimeout(() => { el.style.display = 'none'; }, 4000);
+    }
+
+    // ========== MASTER REKENING ==========
+    function loadRekening() {
+        const saved = localStorage.getItem('si_rapbs_rekening');
+        if (saved) {
+            rekeningList = JSON.parse(saved);
+            nextRekId = rekeningList.length > 0 ? Math.max(...rekeningList.map(r => r.id)) + 1 : 1;
+        } else {
+            rekeningList = JSON.parse(JSON.stringify(defaultRekeningData));
+            nextRekId = 3;
+            saveRekening();
+        }
+        renderRekeningRows();
+    }
+
+    function saveRekening() { localStorage.setItem('si_rapbs_rekening', JSON.stringify(rekeningList)); }
+
+    function getRekeningOptions(selectedId) {
+        let html = '<option value="">-- Pilih Rekening --</option>';
+        rekeningList.forEach(r => { html += `<option value="${r.id}" ${r.id == selectedId ? 'selected' : ''}>${r.nama} - ${r.bank} - ${r.rek}</option>`; });
+        return html;
+    }
+
+    function getRekeningById(id) { return rekeningList.find(r => r.id == id) || { nama: "", bank: "", rek: "" }; }
+
+    function renderRekeningRows() {
+        const container = document.getElementById('rekening-inputs');
+        container.innerHTML = '';
+        rekeningList.forEach(r => {
+            const div = document.createElement('div');
+            div.className = 'rekening-row';
+            div.innerHTML = `
+                <input type="text" value="${esc(r.nama)}" onchange="updateRekening(${r.id}, 'nama', this.value)" placeholder="Nama Lengkap">
+                <input type="text" value="${esc(r.bank)}" onchange="updateRekening(${r.id}, 'bank', this.value)" placeholder="Bank">
+                <input type="text" value="${esc(r.rek)}" onchange="updateRekening(${r.id}, 'rek', this.value)" placeholder="No Rekening">
+                <button onclick="removeRekening(${r.id})" style="background:#e74c3c; color:white; border:none; height:25px; border-radius:3px; cursor:pointer; font-size:11px;">X</button>
+            `;
+            container.appendChild(div);
+        });
+        updateAllBelanjaDropdowns();
+    }
+
+    function updateRekening(id, field, val) {
+        const r = rekeningList.find(x => x.id === id);
+        if (r) { r[field] = val; saveRekening(); updateAllBelanjaDropdowns(); }
+    }
+
+    function removeRekening(id) {
+        rekeningList = rekeningList.filter(r => r.id !== id);
+        belanjaItems.forEach(b => { if (b.rekId == id) b.rekId = ""; });
+        saveRekening();
+        saveBelanjaLocal();
+        renderRekeningRows();
+        renderEditorRows();
+        updateSurat();
+    }
+
+    function addRekeningRow() {
+        rekeningList.push({ id: nextRekId++, nama: '', bank: '', rek: '' });
+        saveRekening();
+        renderRekeningRows();
+    }
+
+    // ========== BELANJA ROWS ==========
+    function getCurrentPeriod() {
+        const bulan = document.getElementById('in_bulan').value;
+        const tahun = document.getElementById('in_tahun').value;
+        return bulan + ' ' + tahun;
+    }
+
+    function saveBelanjaLocal(periodOverride) {
+        const period = periodOverride || currentPeriodKey || getCurrentPeriod();
+        const allData = JSON.parse(localStorage.getItem('si_belanja_periode') || '{}');
+        // SEMUA item tersimpan ke periode aktif (masing-masing bulan punya data sendiri)
+        allData[period] = {
+            items: belanjaItems,
+            nextId: nextId,
+            rapbs_text: document.getElementById('rapbs_input').value,
+            savedAt: new Date().toISOString()
+        };
+        localStorage.setItem('si_belanja_periode', JSON.stringify(allData));
+        isDirty = false;
+        updatePeriodIndicator();
+        updatePeriodFilter();
+    }
+
+    function updatePeriodFilter() {
+        const sel = document.getElementById('filter_periode');
+        if (!sel) { updatePeriodIndicator(); return; }
+        const allData = JSON.parse(localStorage.getItem('si_belanja_periode') || '{}');
+        const current = getCurrentPeriod();
+        let html = '<option value="">-- Pilih Periode --</option>';
+        Object.keys(allData).sort().forEach(p => {
+            const itemCount = (allData[p].items || []).length;
+            const checkedCount = (allData[p].items || []).filter(i => i.checked).length;
+            html += '<option value="' + p + '"' + (p === current ? ' selected' : '') + '>' + p + ' (' + checkedCount + '/' + itemCount + ' item)</option>';
+        });
+        sel.innerHTML = html;
+        updatePeriodIndicator();
+    }
+
+    function loadPeriodFromFilter() {
+        const selEl = document.getElementById('filter_periode');
+        if (!selEl) return;
+        const sel = selEl.value;
+        if (!sel) return;
+        // Format: "Januari 2026 (3/5 item)" - extract just the period part
+        const match = sel.match(/^([A-Za-z]+)\s+(\d{4})/);
+        if (match) {
+            document.getElementById('in_bulan').value = match[1];
+            document.getElementById('in_tahun').value = match[2];
+            changePeriod();
+        }
+    }
+
+    function changePeriod() {
+        const newPeriod = getCurrentPeriod();
+        // 1. Simpan dulu periode LAMA dengan key LAMA (item & textarea masih milik bulan lama).
+        //    Jangan pakai getCurrentPeriod() di sini karena select sudah menunjuk bulan baru,
+        //    nanti data bulan lama tertimpa ke key bulan baru (bulan baru jadi terisi otomatis).
+        if (currentPeriodKey && currentPeriodKey !== newPeriod) {
+            saveBelanjaLocal(currentPeriodKey);
+        }
+        currentPeriodKey = newPeriod;
+        const allData = JSON.parse(localStorage.getItem('si_belanja_periode') || '{}');
+        if (allData[newPeriod]) {
+            // 2. Bulan sudah pernah diisi -> data muncul otomatis
+            const data = allData[newPeriod];
+            belanjaItems = data.items || [];
+            nextId = data.nextId || 1;
+            document.getElementById('rapbs_input').value = data.rapbs_text || '';
+            renderEditorRows();
+        } else {
+            // 3. Bulan baru / belum pernah di-parse -> rincian belanja KOSONG
+            belanjaItems = [];
+            nextId = 1;
+            document.getElementById('rapbs_input').value = '';
+            renderEditorRows();
+        }
+        isDirty = false;
+        updateSurat();
+        updatePeriodFilter();
+        updatePeriodIndicator();
+        showStatus('📅 Periode aktif: ' + newPeriod + (allData[newPeriod] ? ' ✓ Data bulan ini dimuat otomatis' : ' (baru - rincian belanja kosong)'), false);
+    }
+
+    function deleteCurrentPeriod() {
+        const period = getCurrentPeriod();
+        const allData = JSON.parse(localStorage.getItem('si_belanja_periode') || '{}');
+        if (!allData[period]) {
+            showStatus('Periode ' + period + ' belum memiliki data tersimpan.', true);
+            return;
+        }
+        if (!confirm('Yakin ingin menghapus SEMUA data belanja periode "' + period + '"?')) return;
+        delete allData[period];
+        localStorage.setItem('si_belanja_periode', JSON.stringify(allData));
+        belanjaItems = [];
+        nextId = 1;
+        isDirty = false;
+        renderEditorRows();
+        updateSurat();
+        updatePeriodFilter();
+        updatePeriodIndicator();
+        showStatus('🗑️ Periode ' + period + ' telah dihapus.', false);
+    }
+
+    function loadBelanjaLocal() {
+        currentPeriodKey = getCurrentPeriod();
+        const allData = JSON.parse(localStorage.getItem('si_belanja_periode') || '{}');
+        if (allData[currentPeriodKey]) {
+            const data = allData[currentPeriodKey];
+            belanjaItems = data.items || [];
+            nextId = data.nextId || 1;
+            document.getElementById('rapbs_input').value = data.rapbs_text || '';
+            renderEditorRows();
+        } else {
+            // Backward compatibility: cek format lama
+            const saved = localStorage.getItem('si_belanja_data');
+            if (saved) {
+                const data = JSON.parse(saved);
+                belanjaItems = data.items || [];
+                nextId = data.nextId || 1;
+                renderEditorRows();
+                // Migrate ke format baru
+                saveBelanjaLocal();
+                localStorage.removeItem('si_belanja_data');
+            } else {
+                // Periode baru: benar-benar kosong, tidak auto isi contoh / tidak bawa teks bulan lama
+                belanjaItems = [];
+                nextId = 1;
+                document.getElementById('rapbs_input').value = '';
+                renderEditorRows();
+            }
+        }
+        isDirty = false;
+        updatePeriodIndicator();
+    }
+
+    function updateAllBelanjaDropdowns() {
+        document.querySelectorAll('.belanja-rek-select').forEach(sel => {
+            const currentVal = sel.value;
+            sel.innerHTML = getRekeningOptions(currentVal);
+        });
+    }
+
+    function createBelanjaRowElement(item) {
+        const div = document.createElement('div');
+        div.className = 'belanja-row';
+        div.dataset.id = item.id;
+        const ppn = item.ppn || 0;
+        const pph = item.pph || 0;
+        div.innerHTML = `
+            <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleRow(${item.id}, this.checked)">
+            <input type="text" value="${esc(item.nama)}" onchange="updateRowName(${item.id}, this.value)" placeholder="Nama Belanja">
+            <select class="belanja-rek-select" data-row-id="${item.id}" onchange="updateRowRekId(${item.id}, this.value)">
+                ${getRekeningOptions(item.rekId)}
+            </select>
+            <input type="number" value="${item.jumlah}" onchange="updateRowAmount(${item.id}, this.value)" placeholder="Bruto" title="Jumlah Bruto">
+            <input type="number" class="pajak-input" value="${ppn}" onchange="updateRowPpn(${item.id}, this.value)" placeholder="PPN" title="PPN">
+            <input type="number" class="pajak-input" value="${pph}" onchange="updateRowPph(${item.id}, this.value)" placeholder="PPH" title="PPH">
+            <button onclick="removeRow(${item.id})" style="background:#e74c3c; color:white; border:none; height:25px; border-radius:3px; cursor:pointer; font-size:11px;">X</button>
+        `;
+        return div;
+    }
+
+    function renderEditorRows() {
+        const container = document.getElementById('belanja-inputs');
+        container.innerHTML = '';
+        belanjaItems.forEach(item => { container.appendChild(createBelanjaRowElement(item)); });
+        updateTotals();
+    }
+
+    function updateTotals() {
+        const checked = belanjaItems.filter(i => i.checked);
+        const totalBruto = checked.reduce((a, b) => a + b.jumlah, 0);
+        const totalPpn = checked.reduce((a, b) => a + (b.ppn || 0), 0);
+        const totalPph = checked.reduce((a, b) => a + (b.pph || 0), 0);
+        const totalNetto = totalBruto - totalPpn - totalPph;
+        document.getElementById('total_selected').innerText = fmtRupiah(totalBruto);
+        document.getElementById('terbilang_selected').innerText = angkaKeTerbilang(totalBruto);
+        return { totalBruto, totalPpn, totalPph, totalNetto };
+    }
+
+    // Tombol Simpan Belanja: simpan ke periode aktif, lalu kosongkan kolom paste
+    function simpanBelanja() {
+        if (belanjaItems.length === 0) { showStatus('Tidak ada rincian belanja untuk disimpan.', true); return; }
+        const period = getCurrentPeriod();
+        saveBelanjaLocal();
+        // Kosongkan kolom paste setelah tersimpan (data item tetap ada di bagian 4)
+        document.getElementById('rapbs_input').value = '';
+        // Pastikan rapbs_text tersimpan juga dikosongkan agar tidak muncul di bulan lain
+        const allData = JSON.parse(localStorage.getItem('si_belanja_periode') || '{}');
+        if (allData[period]) { allData[period].rapbs_text = ''; localStorage.setItem('si_belanja_periode', JSON.stringify(allData)); }
+        updatePeriodIndicator();
+        showStatus('💾 Belanja periode ' + period + ' tersimpan. Kolom paste dikosongkan.', false);
+        updateSurat();
+    }
+
+    function toggleRow(id, checked) {
+        const item = belanjaItems.find(i => i.id === id);
+        if (item) { item.checked = checked; isDirty = true; saveBelanjaLocal(); updateTotals(); updateSurat(); }
+    }
+    function updateRowName(id, val) {
+        const item = belanjaItems.find(i => i.id === id);
+        if (item) {
+            // Nama belanja dan Keterangan Standing Instruction harus selalu sinkron.
+            item.nama = val;
+            item.ket = val;
+            isDirty = true;
+            saveBelanjaLocal();
+            updateSurat();
+        }
+    }
+    function updateRowRekId(id, val) {
+        const item = belanjaItems.find(i => i.id === id);
+        if (item) { item.rekId = val; isDirty = true; saveBelanjaLocal(); updateSurat(); }
+    }
+    function updateRowAmount(id, val) {
+        const item = belanjaItems.find(i => i.id === id);
+        if (item) { item.jumlah = parseInt(val) || 0; isDirty = true; saveBelanjaLocal(); updateTotals(); updateSurat(); }
+    }
+    function updateRowPpn(id, val) {
+        const item = belanjaItems.find(i => i.id === id);
+        if (item) { item.ppn = parseInt(val) || 0; isDirty = true; saveBelanjaLocal(); updateTotals(); updateSurat(); }
+    }
+    function updateRowPph(id, val) {
+        const item = belanjaItems.find(i => i.id === id);
+        if (item) { item.pph = parseInt(val) || 0; isDirty = true; saveBelanjaLocal(); updateTotals(); updateSurat(); }
+    }
+    function removeRow(id) {
+        belanjaItems = belanjaItems.filter(i => i.id !== id);
+        isDirty = true;
+        saveBelanjaLocal();
+        renderEditorRows();
+        updateSurat();
+    }
+    function addManualRow() {
+        belanjaItems.push({ id: nextId++, nama: 'Item Baru', jumlah: 0, ppn: 0, pph: 0, rekId: "", checked: true, ket: '' });
+        isDirty = true;
+        saveBelanjaLocal();
+        renderEditorRows();
+        updateSurat();
+    }
+
+    // Paste rincian belanja -> LANGSUNG parse & simpan otomatis ke bulan aktif (tanpa tombol)
+    function autoParseRapbs() {
+        const raw = document.getElementById('rapbs_input').value.trim();
+        // Jika textarea dikosongkan -> rincian belanja bulan ini ikut dikosongkan
+        if (!raw) {
+            belanjaItems = [];
+            nextId = 1;
+            isDirty = true;
+            saveBelanjaLocal();
+            renderEditorRows();
+            updateSurat();
+            return;
+        }
+        const lines = raw.split('\n');
+        const newItems = [];
+        lines.forEach(line => {
+            line = line.trim();
+            if (!line) return;
+            let parts = line.split('|');
+            if (parts.length < 2) parts = line.split('\t');
+            if (parts.length < 2) {
+                const match = line.match(/(\d[\d.,]*\d)\s*$/);
+                if (match) {
+                    const name = line.substring(0, line.lastIndexOf(match[1])).trim();
+                    const amount = parseInt(match[1].replace(/[.,]/g, '')) || 0;
+                    if (name && amount > 0) newItems.push({ nama: name, jumlah: amount, ket: name });
+                }
+            } else {
+                const name = parts[0].trim();
+                const amount = parseInt(parts[parts.length-1].replace(/[^\d]/g, '')) || 0;
+                if (name && amount > 0) newItems.push({ nama: name, jumlah: amount, ket: name });
+            }
+        });
+        // Hasil paste langsung mengganti rincian belanja bulan aktif & tersimpan otomatis
+        belanjaItems = newItems.map(d => ({ id: nextId++, nama: d.nama, jumlah: d.jumlah, ppn: 0, pph: 0, rekId: 1, checked: true, ket: d.ket }));
+        isDirty = true;
+        saveBelanjaLocal();
+        renderEditorRows();
+        updateSurat();
+        showStatus('📋 ' + belanjaItems.length + ' item tersimpan otomatis ke ' + getCurrentPeriod(), false);
+    }
+
+    // ========== UPDATE DOKUMEN ==========
+    function updateSurat() {
+        const periode = getCurrentPeriod();
+        document.getElementById('out_periode').innerText = periode;
+        const _pk = document.getElementById('out_periode_kuasa'); if (_pk) _pk.innerText = periode;
+        document.querySelectorAll('.out_periode_class').forEach(function(e){ e.innerText = periode; });
+
+        const kab = document.getElementById('in_kabupaten').value;
+        const namaSekolah = document.getElementById('in_nama_sekolah').value;
+        const namaKS = document.getElementById('in_nama_ks').value;
+        const nipKS = document.getElementById('in_nip_ks').value;
+        const namaBend = document.getElementById('in_nama_bend').value;
+        const nipBend = document.getElementById('in_nip_bend').value;
+        const rekSekolah = document.getElementById('in_rek_sekolah').value;
+        const alamatSekolah = document.getElementById('in_alamat_sekolah').value;
+        const emailSekolah = document.getElementById('in_email_sekolah').value;
+
+        document.getElementById('out_kabupaten').innerText = kab;
+        document.getElementById('out_nama_sekolah').innerText = namaSekolah;
+        document.getElementById('out_nama_sekolah_2').innerText = namaSekolah;
+        document.getElementById('out_alamat_sekolah').innerText = alamatSekolah;
+        document.getElementById('out_email_sekolah').innerText = emailSekolah;
+        document.getElementById('out_nama_ks').innerText = namaKS;
+        document.getElementById('out_nip_ks').innerText = nipKS;
+        document.getElementById('out_nama_bend').innerText = namaBend;
+        document.getElementById('out_nip_bend').innerText = nipBend;
+        document.getElementById('out_rek_sekolah').innerText = rekSekolah;
+
+        document.querySelectorAll('.out_kabupaten_class').forEach(e => e.innerText = kab);
+        document.querySelectorAll('.out_nama_sekolah_class').forEach(e => e.innerText = namaSekolah);
+        document.querySelectorAll('.out_alamat_sekolah_class').forEach(e => e.innerText = alamatSekolah);
+        document.querySelectorAll('.out_email_sekolah_class').forEach(e => e.innerText = emailSekolah);
+        document.querySelectorAll('.out_nama_ks_ttd_class').forEach(e => e.innerText = namaKS);
+        document.querySelectorAll('.out_nip_ks_ttd_class').forEach(e => e.innerText = nipKS);
+        document.querySelectorAll('.out_nama_bend_ttd_class').forEach(e => e.innerText = namaBend);
+        document.querySelectorAll('.out_nip_bend_ttd_class').forEach(e => e.innerText = nipBend);
+
+        document.getElementById('out_nama_ks_ttd').innerText = namaKS;
+        document.getElementById('out_nip_ks_ttd').innerText = nipKS;
+        document.getElementById('out_nama_bend_ttd').innerText = namaBend;
+        document.getElementById('out_nip_bend_ttd').innerText = nipBend;
+
+        const noSurat = document.getElementById('in_no_surat').value;
+        const tgl = document.getElementById('in_tgl').value;
+        const catatan = document.getElementById('in_catatan').value;
+
+        document.getElementById('out_no_surat').innerText = noSurat;
+        document.getElementById('out_tgl').innerText = tgl;
+        document.getElementById('out_catatan').innerText = catatan;
+        const _nsk = document.getElementById('out_no_surat_kuasa'); if (_nsk) _nsk.innerText = noSurat;
+        document.getElementById('out_tgl_kuasa').innerText = tgl;
+
+        const namaPenjual = document.getElementById('in_nama_penjual').value;
+        const nikPenjual = document.getElementById('in_nik_penjual').value;
+        const jabatanPenjual = document.getElementById('in_jabatan_penjual').value;
+        const alamatPenjual = document.getElementById('in_alamat_penjual').value;
+
+        const checkedItems = belanjaItems.filter(i => i.checked);
+        let html = '';
+        let totalBruto = 0;
+        let totalPpn = 0;
+        let totalPph = 0;
+
+        for (let i = 0; i < checkedItems.length; i++) {
+            let item = checkedItems[i];
+            let rek = getRekeningById(item.rekId);
+            let ppn = item.ppn || 0;
+            let pph = item.pph || 0;
+            let netto = item.jumlah - ppn - pph;
+            totalBruto += item.jumlah;
+            totalPpn += ppn;
+            totalPph += pph;
+            html += `<tr>
+                <td>${i + 1}</td><td>${rek.nama || '-'}</td><td>${rek.bank || '-'}</td><td>${rek.rek || '-'}</td>
+                <td>${fmtNumber(item.jumlah)},-</td><td>${ppn > 0 ? fmtNumber(ppn) + ',-' : '-'}</td><td>${pph > 0 ? fmtNumber(pph) + ',-' : '-'}</td><td>${fmtNumber(netto)},-</td>
+                <td style="text-align:left">${item.nama || item.ket || '-'}</td>
+            </tr>`;
+        }
+
+        if (checkedItems.length === 0) {
+            html = '<tr><td colspan="9" style="padding:10px; color:#999;">Belum ada item yang dipilih. Ceklis item di panel editor.</td></tr>';
+        }
+
+        let totalNetto = totalBruto - totalPpn - totalPph;
+        document.getElementById('out_tabel_body').innerHTML = html;
+        document.getElementById('total_bruto').innerText = fmtNumber(totalBruto) + ',-';
+        document.getElementById('total_ppn').innerText = totalPpn > 0 ? fmtNumber(totalPpn) + ',-' : '-';
+        document.getElementById('total_pph').innerText = totalPph > 0 ? fmtNumber(totalPph) + ',-' : '-';
+        document.getElementById('total_netto').innerText = fmtNumber(totalNetto);
+
+        let terbilangInput = document.getElementById('in_terbilang').value;
+        // Terbilang tetap pakai BRUTO, bukan netto
+        let terbilangFinal = terbilangInput || angkaKeTerbilang(totalBruto);
+        document.getElementById('out_terbilang').innerText = terbilangFinal;
+        updateKuasaBaru();
+        updateDokumenBaru();
+
+        updateDokumenPbj();
+    }
+
+    function updateDokumenPbj() {
+        const gv = (id) => { const e = document.getElementById(id); return e ? e.value : ''; };
+        const set = (id, val) => { const e = document.getElementById(id); if (e) e.innerText = val; };
+        const setAll = (cls, val) => document.querySelectorAll('.' + cls).forEach(e => e.innerText = val);
+        const setBody = (id, rows, colspan) => {
+            const e = document.getElementById(id);
+            if (e) e.innerHTML = items.length ? rows : '<tr><td colspan="' + colspan + '" style="padding:10px;color:#999;">Belum ada item terceklis.</td></tr>';
+        };
+
+        const tgl = gv('in_tgl');
+        const tahun = gv('in_tahun');
+        const hari = gv('in_hari');
+        const tglTerima = gv('in_tgl_terima');
+        const items = belanjaItems.filter(i => i.checked);
+        const total = items.reduce((a, b) => a + b.jumlah, 0);
+        const terbilang = gv('in_terbilang') || angkaKeTerbilang(total);
+        const noSp = gv('in_no_po');
+        const noInv = gv('in_no_invoice');
+        const v2 = gv('in_vendor2');
+        const pNama = gv('in_nama_penjual'), pJab = gv('in_jabatan_penjual'), pAlm = gv('in_alamat_penjual'), pTelp = gv('in_telp_penjual');
+        const dipilih = pNama || gv('in_vendor1');
+        const kab = gv('in_kabupaten');
+        const kabLower = kab.charAt(0) + kab.slice(1).toLowerCase();
+        const pekerjaan = gv('in_nama_pekerjaan') || gv('in_catatan');
+        const catatan = gv('in_catatan');
+        const namaKS = gv('in_nama_ks'), nipKS = gv('in_nip_ks'), namaBend = gv('in_nama_bend'), nipBend = gv('in_nip_bend');
+
+        setAll('out_kab_lower_class', kabLower);
+        setAll('out_tahun_class', tahun);
+        setAll('out_nama_ks_class', namaKS);
+        setAll('out_nip_ks_class', nipKS);
+        setAll('out_nama_bend_class', namaBend);
+        setAll('out_nip_bend_class', nipBend);
+
+        // ---- pecah tanggal utk kesepakatan bersama ----
+        const tp = tgl.split(' ');
+        const tglAngka = tp[0] || '';
+        const bulanNama = tp[1] || '';
+        const tahunAngka = parseInt(tp[2]) || parseInt(tahun) || 0;
+        const tahunTerbilang = tahunAngka ? terbilangRekursif(tahunAngka) : tahun;
+
+        // ============ 1. DOKUMEN PERENCANAAN ============
+        set('out_kategori', gv('in_kategori'));
+        set('plan_jumlah', items.length + ' jenis barang/jasa');
+        set('plan_spesifikasi', items.map(i => i.nama).join('; ') || '-');
+        set('plan_waktu', tglTerima);
+        set('plan_lokasi', gv('in_nama_sekolah'));
+        set('plan_anggaran', fmtRupiah(total) + ' (' + terbilang + ')');
+
+        // ============ 2. DOKUMEN HASIL PEMBANDINGAN ============
+        let bandingHtml = '';
+        items.forEach(it => {
+            const hargaI = Math.round(it.jumlah * 1.06 / 100) * 100;   // Produk I (lebih mahal)
+            const hargaII = it.jumlah;                                  // Produk II (dipilih)
+            bandingHtml += '<table class="data-table" style="margin-bottom:14px; font-size:9pt;">' +
+                '<thead><tr><th width="170">Uraian</th><th>Produk I</th><th>Produk II</th><th width="70">Ket</th></tr></thead><tbody>' +
+                '<tr><td style="text-align:left">Nama Calon Penyedia</td><td>' + esc(v2) + '</td><td><b>' + esc(dipilih) + '</b></td><td></td></tr>' +
+                '<tr><td style="text-align:left">Nama Produk</td><td>' + esc(it.nama) + '</td><td>' + esc(it.nama) + '</td><td></td></tr>' +
+                '<tr><td style="text-align:left">Gambar Produk</td><td>-</td><td>-</td><td></td></tr>' +
+                '<tr><td style="text-align:left">Harga Satuan</td><td>' + fmtNumber(hargaI) + ',-</td><td>' + fmtNumber(hargaII) + ',-</td><td></td></tr>' +
+                '<tr><td style="text-align:left">Spesifikasi</td><td>Sesuai kebutuhan</td><td>Sesuai kebutuhan</td><td></td></tr>' +
+                '<tr><td style="text-align:left">Estimasi Pengiriman</td><td>2 hari</td><td>1 hari</td><td></td></tr>' +
+                '<tr><td style="text-align:left">Alamat Calon Penyedia</td><td>-</td><td>' + esc(pAlm) + '</td><td></td></tr>' +
+                '</tbody></table>';
+        });
+        const pb = document.getElementById('out_tabel_pembandingan');
+        if (pb) pb.innerHTML = items.length ? bandingHtml : '<p style="color:#999;">Belum ada item terceklis.</p>';
+
+        // ============ 3. DOKUMEN HASIL NEGOSIASI ============
+        let neg = '', totNeg = 0, totNegAwal = 0;
+        items.forEach((it, idx) => {
+            const hawal = Math.round(it.jumlah * 1.1 / 100) * 100;
+            totNegAwal += hawal; totNeg += it.jumlah;
+            neg += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td>1</td>' +
+                '<td>' + fmtNumber(hawal) + ',-</td><td>' + fmtNumber(it.jumlah) + ',-</td><td style="text-align:left">Disepakati</td></tr>';
+        });
+        setBody('out_tabel_negosiasi', neg, 6);
+        set('total_neg_awal', fmtNumber(totNegAwal) + ',-');
+        set('total_neg', fmtNumber(totNeg) + ',-');
+        set('neg_vendor', dipilih); set('neg_alamat', pAlm); set('neg_tgl_terima', tglTerima);
+        set('neg_ttd', dipilih); set('out_tgl_neg', tgl);
+
+        // ============ 4. SURAT PERJANJIAN KESEPAKATAN BERSAMA ============
+        set('out_no_spj', gv('in_no_spj'));
+        set('spj_hari', hari); set('spj_tgl', tglAngka); set('spj_bulan', bulanNama); set('spj_tahun_terbilang', tahunTerbilang);
+        set('spj_nama_pihak2', dipilih); set('spj_jabatan_pihak2', pJab); set('spj_usaha', dipilih); set('spj_alamat_pihak2', pAlm);
+        set('spj_ttd_pihak2', dipilih); set('spj_tgl_selesai', tglTerima);
+        let spj = '';
+        items.forEach((it, idx) => {
+            spj += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td>1</td><td>Paket</td>' +
+                '<td>' + fmtNumber(it.jumlah) + ',-</td><td>' + fmtNumber(it.jumlah) + ',-</td></tr>';
+        });
+        setBody('out_tabel_spj', spj, 6);
+        set('total_spj', fmtNumber(total) + ',-'); set('terbilang_spj', terbilang);
+
+        // ============ 5. SURAT PESANAN (SP) ============
+        set('out_no_sp', noSp);
+        set('sp_vendor', dipilih); set('sp_alamat', pAlm); set('sp_telp', pTelp); set('sp_ttd', dipilih);
+        set('sp_tgl_terima', tglTerima); set('out_tgl_sp', tgl);
+        let sp = '';
+        items.forEach((it, idx) => {
+            sp += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td>1</td><td>Paket</td>' +
+                '<td>' + fmtNumber(it.jumlah) + ',-</td><td>' + fmtNumber(it.jumlah) + ',-</td></tr>';
+        });
+        setBody('out_tabel_sp', sp, 6);
+        set('total_sp', fmtNumber(total) + ',-'); set('total_sp_all', fmtNumber(total) + ',-'); set('terbilang_sp', terbilang);
+
+        // ============ 6. SURAT PERINTAH KERJA (SPK) ============
+        set('out_no_spk', gv('in_no_spk')); set('out_tgl_spk', tgl);
+        set('spk_paket', pekerjaan); set('spk_tgl_negosiasi', tgl);
+        set('spk_waktu', tgl); set('spk_selesai', tglTerima); set('spk_ttd', dipilih);
+        let spk = '';
+        items.forEach((it, idx) => {
+            spk += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td style="text-align:left">1 Paket</td>' +
+                '<td>' + fmtNumber(it.jumlah) + ',-</td><td>' + fmtNumber(it.jumlah) + ',-</td></tr>';
+        });
+        setBody('out_tabel_spk', spk, 5);
+        set('total_spk', fmtNumber(total) + ',-'); set('terbilang_spk', terbilang);
+
+        // ============ 7. SURAT HASIL PEMERIKSAAN ============
+        set('out_no_shp', gv('in_no_ba') + '/SHP');
+        set('shp_hari', hari); set('shp_tgl', tgl);
+        set('shp_no_sp', noSp); set('shp_tgl_sp', tgl); set('shp_pekerjaan', pekerjaan); set('shp_tahun', tahun);
+        set('shp_telp', gv('in_telp_sekolah')); set('shp_ttd_penyedia', dipilih);
+        let shp = '';
+        items.forEach((it, idx) => {
+            shp += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td>1 Paket</td>' +
+                '<td>Sesuai</td><td>Baik</td></tr>';
+        });
+        setBody('out_tabel_shp', shp, 5);
+
+        // ============ 8. BERITA ACARA PEMERIKSAAN TEKNIS ============
+        set('out_no_ba', gv('in_no_ba'));
+        set('ba_hari', hari); set('ba_tgl', tgl);
+        set('ba_no_sk', gv('in_no_sk')); set('ba_tgl_sk', tgl);
+        set('ba_belanja', catatan); set('ba_vendor', dipilih);
+        set('ba_no_sp', noSp); set('ba_tgl_sp', tgl); set('ba_mulai', tgl); set('ba_sampai', tglTerima);
+        let ba = '';
+        items.forEach(it => {
+            ba += '<tr><td style="text-align:left">' + esc(it.nama) + '</td><td>1</td><td>Paket</td>' +
+                '<td>' + fmtNumber(it.jumlah) + ',-</td><td>' + fmtNumber(it.jumlah) + ',-</td><td>Sesuai</td></tr>';
+        });
+        setBody('out_tabel_ba', ba, 6);
+        set('total_ba', fmtNumber(total) + ',-');
+
+        // ============ 9. KUITANSI BELANJA ============
+        set('out_no_kwitansi', noInv + '/KWT');
+        set('kwit_terbilang', '(' + terbilang + ')');
+        set('kwit_untuk', catatan);
+        set('kwit_kode_rek', gv('in_kode_rek'));
+        set('kwit_nominal', fmtNumber(total));
+        set('kwit_ttd', dipilih); set('kwit_nik_ttd', gv('in_nik_penjual'));
+        set('out_tgl_kwit', tgl);
+
+        // ============ 10. SK TIM PELAKSANA BELANJA ============
+        set('out_no_sk', gv('in_no_sk'));
+        set('sk_tgl', tgl);
+        set('sk_no_lamp', gv('in_no_sk'));
+        set('sk_tgl_lamp', tgl);
+    }
+
+    // ========== SURAT KUASA BARU + SPTJM + DAFTAR UPAH ==========
+    let pemberiKuasa = [];
+    let upahList = [];
+    let pesertaList = [];
+
+    function loadKuasaData() {
+        const saved = localStorage.getItem('si_kuasa_data');
+        if (saved) {
+            const d = JSON.parse(saved);
+            pemberiKuasa = d.pemberi || [];
+            upahList = d.upah || [];
+        }
+        if (pemberiKuasa.length === 0) pemberiKuasa.push({ nama: '', alamat: '', nik: '' });
+        if (upahList.length === 0) upahList.push({ nama: '', jabatan: 'Tukang/Pekerja', nik: '', rek: '', kotor: 0, pajak: 0 });
+        const savedP = localStorage.getItem('si_peserta_data');
+        pesertaList = savedP ? JSON.parse(savedP) : [];
+        if (pesertaList.length === 0) { pesertaList.push({ nama: '', jabatan: '' }); pesertaList.push({ nama: '', jabatan: '' }); }
+        renderPemberiRows(); renderUpahRows(); renderPesertaRows();
+    }
+    function saveKuasaData() {
+        localStorage.setItem('si_kuasa_data', JSON.stringify({ pemberi: pemberiKuasa, upah: upahList }));
+        localStorage.setItem('si_peserta_data', JSON.stringify(pesertaList));
+    }
+    function renderPemberiRows() {
+        const c = document.getElementById('kuasa-pemberi-inputs'); c.innerHTML = '';
+        pemberiKuasa.forEach(function(p, i) {
+            const div = document.createElement('div');
+            div.className = 'rekening-row';
+            div.style.gridTemplateColumns = '2fr 2fr 1.5fr 40px';
+            div.innerHTML = '<input type="text" value="' + esc(p.nama) + '" onchange="updPemberi(' + i + ',\'nama\',this.value)" placeholder="Nama Pemberi Kuasa ' + (i + 1) + '">' +
+                '<input type="text" value="' + esc(p.alamat) + '" onchange="updPemberi(' + i + ',\'alamat\',this.value)" placeholder="Alamat">' +
+                '<input type="text" value="' + esc(p.nik) + '" onchange="updPemberi(' + i + ',\'nik\',this.value)" placeholder="No KTP/NIK">' +
+                '<button onclick="delPemberi(' + i + ')" style="background:#e74c3c;color:#fff;border:none;height:25px;border-radius:3px;cursor:pointer;">X</button>';
+            c.appendChild(div);
+        });
+    }
+    function updPemberi(i, f, v) { pemberiKuasa[i][f] = v; saveKuasaData(); updateSurat(); }
+    function addPemberi() { pemberiKuasa.push({ nama: '', alamat: '', nik: '' }); saveKuasaData(); renderPemberiRows(); updateSurat(); }
+    function delPemberi(i) { pemberiKuasa.splice(i, 1); if (!pemberiKuasa.length) pemberiKuasa.push({ nama: '', alamat: '', nik: '' }); saveKuasaData(); renderPemberiRows(); updateSurat(); }
+
+    function renderUpahRows() {
+        const c = document.getElementById('upah-inputs'); c.innerHTML = '';
+        upahList.forEach(function(u, i) {
+            const div = document.createElement('div');
+            div.className = 'upah-row';
+            div.innerHTML = '<input type="text" value="' + esc(u.nama) + '" onchange="updUpah(' + i + ',\'nama\',this.value)" placeholder="Nama">' +
+                '<input type="text" value="' + esc(u.jabatan) + '" onchange="updUpah(' + i + ',\'jabatan\',this.value)" placeholder="Jabatan">' +
+                '<input type="text" value="' + esc(u.nik) + '" onchange="updUpah(' + i + ',\'nik\',this.value)" placeholder="NIK">' +
+                '<input type="text" value="' + esc(u.rek) + '" onchange="updUpah(' + i + ',\'rek\',this.value)" placeholder="No Rekening">' +
+                '<input type="number" value="' + (u.kotor || 0) + '" onchange="updUpah(' + i + ',\'kotor\',this.value)" placeholder="Kotor (Rp)">' +
+                '<input type="number" value="' + (u.pajak || 0) + '" onchange="updUpah(' + i + ',\'pajak\',this.value)" placeholder="Pajak (Rp)">' +
+                '<button onclick="delUpah(' + i + ')" style="background:#e74c3c;color:#fff;border:none;height:25px;border-radius:3px;cursor:pointer;">X</button>';
+            c.appendChild(div);
+        });
+        updateUpahInfo();
+    }
+    function updUpah(i, f, v) {
+        upahList[i][f] = (f === 'kotor' || f === 'pajak') ? (parseInt(v) || 0) : v;
+        saveKuasaData(); updateUpahInfo(); updateSurat();
+    }
+    function addUpah() { upahList.push({ nama: '', jabatan: 'Tukang/Pekerja', nik: '', rek: '', kotor: 0, pajak: 0 }); saveKuasaData(); renderUpahRows(); updateSurat(); }
+    function delUpah(i) { upahList.splice(i, 1); saveKuasaData(); renderUpahRows(); updateSurat(); }
+    function updateUpahInfo() {
+        let tk = 0, tp = 0, td = 0;
+        upahList.forEach(function(u) { const k = parseInt(u.kotor) || 0; const p = parseInt(u.pajak) || 0; tk += k; tp += p; td += k - p; });
+        const e = document.getElementById('upah_total_info');
+        if (e) e.innerText = 'Total Kotor: Rp ' + fmtNumber(tk) + '  |  Pajak: Rp ' + fmtNumber(tp) + '  |  Diterima: Rp ' + fmtNumber(td);
+    }
+
+    function renderPesertaRows() {
+        const c = document.getElementById('peserta-inputs'); c.innerHTML = '';
+        pesertaList.forEach(function(p, i) {
+            const div = document.createElement('div');
+            div.className = 'peserta-row';
+            div.innerHTML = '<input type="text" value="' + esc(p.nama) + '" onchange="updPeserta(' + i + ',\'nama\',this.value)" placeholder="Nama Peserta">' +
+                '<input type="text" value="' + esc(p.jabatan) + '" onchange="updPeserta(' + i + ',\'jabatan\',this.value)" placeholder="Jabatan">' +
+                '<button onclick="delPeserta(' + i + ')" style="background:#e74c3c;color:#fff;border:none;height:25px;border-radius:3px;cursor:pointer;">X</button>';
+            c.appendChild(div);
+        });
+    }
+    function updPeserta(i, f, v) { pesertaList[i][f] = v; saveKuasaData(); updateSurat(); }
+    function addPeserta() { pesertaList.push({ nama: '', jabatan: '' }); saveKuasaData(); renderPesertaRows(); updateSurat(); }
+    function delPeserta(i) { pesertaList.splice(i, 1); saveKuasaData(); renderPesertaRows(); updateSurat(); }
+
+    function updateKuasaBaru() {
+        const gv = function(id) { const e = document.getElementById(id); return e ? e.value : ''; };
+        const set = function(id, v) { const e = document.getElementById(id); if (e) e.innerText = v; };
+        const judul = (gv('in_judul_kuasa') || 'PEMBAYARAN UPAH KERJA TUKANG KEGIATAN PEMELIHARAAN GEDUNG/SARANA/PRASARANA SEKOLAH').toUpperCase();
+        const sekolah = gv('in_nama_sekolah');
+        const tgl = gv('in_tgl');
+        document.querySelectorAll('.out_judul_kuasa_class').forEach(function(e) { e.innerText = judul; });
+        const maksudEl = document.getElementById('out_maksud_kuasa');
+        if (maksudEl) {
+            maksudEl.innerHTML = gv('in_maksud_kuasa').split('\n').filter(function(l){ return l.trim(); })
+                .map(function(l) { return '<p style="margin:4px 0; text-align:justify;">' + esc(l) + '</p>'; }).join('');
+        }
+        const pt = document.getElementById('kuasa_pemberi_table');
+        if (pt) {
+            let hp = '';
+            pemberiKuasa.forEach(function(p, i) {
+                hp += '<tr><td width="35" style="vertical-align:top;">' + (i + 1) + '.</td><td width="90">Nama</td><td>: ' + (esc(p.nama) || '....................') + '</td></tr>';
+                hp += '<tr><td></td><td>Alamat</td><td>: ' + (esc(p.alamat) || '....................') + '</td></tr>';
+                hp += '<tr><td></td><td>No KTP</td><td>: ' + (esc(p.nik) || '....................') + '</td></tr>';
+            });
+            pt.innerHTML = hp;
+        }
+        const pn = document.getElementById('kuasa_penerima_table');
+        if (pn) {
+            pn.innerHTML =
+                '<tr><td width="90">Nama</td><td>: ' + (esc(gv('in_nama_kuasa2')) || '....................') + '</td></tr>' +
+                '<tr><td>Jabatan</td><td>: ' + (esc(gv('in_jabatan_kuasa2')) || '....................') + '<br><span style="font-size:9pt; font-style:italic;">(berstatus sebagai pekerja/tukang tidak boleh ASN/honorer)</span></td></tr>' +
+                '<tr><td>Alamat</td><td>: ' + (esc(gv('in_alamat_kuasa2')) || '....................') + '</td></tr>' +
+                '<tr><td>No KTP</td><td>: ' + (esc(gv('in_nik_kuasa2')) || '....................') + '</td></tr>';
+        }
+        set('kuasa_ttd_penerima', gv('in_nama_kuasa2'));
+        let pl = '';
+        pemberiKuasa.forEach(function(p, i) { pl += (i + 1) + '. ' + (p.nama ? esc(p.nama) : '....................') + '<br>'; });
+        const plEl = document.getElementById('kuasa_ttd_pemberi_list');
+        if (plEl) plEl.innerHTML = pl;
+        // SPTJM
+        set('sptjm_nama', gv('in_nama_kuasa2'));
+        set('sptjm_nik', gv('in_nik_kuasa2'));
+        set('sptjm_jabatan', gv('in_jabatan_kuasa2'));
+        set('sptjm_jabatan2', gv('in_jabatan_kuasa2'));
+        set('sptjm_alamat', gv('in_alamat_kuasa2'));
+        set('sptjm_telp', gv('in_telp_kuasa2'));
+        set('sptjm_ttd', gv('in_nama_kuasa2'));
+        set('sptjm_tgl', tgl);
+        const sptjmEl = document.getElementById('sptjm_isi');
+        if (sptjmEl) {
+            sptjmEl.innerHTML =
+                '<p style="margin:5px 0; text-align:justify;">1. Saya telah menerima pembayaran dana upah kerja untuk kegiatan ' + judul.toLowerCase() + ' dari pihak sekolah ' + esc(sekolah) + ' secara penuh sesuai dengan hak dan ketentuan yang berlaku.</p>' +
+                '<p style="margin:5px 0; text-align:justify;">2. Saya bertanggung jawab penuh secara mutlak (baik secara perdata maupun pidana) untuk menyalurkan dan mendistribusikan dana upah tersebut <b>secara langsung, utuh, dan tanpa potongan apapun</b> kepada seluruh rekan-rekan sesama tukang dan pekerja yang terlibat dalam kegiatan tersebut, sesuai dengan Daftar Penerimaan Upah Kerja Tukang.</p>' +
+                '<p style="margin:5px 0; text-align:justify;">3. Apabila di kemudian hari timbul permasalahan, pengaduan, atau tuntutan hukum dari rekan-rekan sesama pekerja terkait belum diterimanya atau tidak sesuai diterimanya pembayaran upah tersebut, maka hal itu sepenuhnya menjadi tanggung jawab saya pribadi, dan saya membebaskan pihak sekolah dari segala bentuk tuntutan hukum.</p>';
+        }
+        // DAFTAR UPAH
+        const ut = document.getElementById('out_tabel_upah');
+        let tk = 0, tp = 0, td = 0, hu = '';
+        upahList.forEach(function(u, i) {
+            const kotor = parseInt(u.kotor) || 0;
+            const pajak = parseInt(u.pajak) || 0;
+            const diterima = kotor - pajak;
+            tk += kotor; tp += pajak; td += diterima;
+            hu += '<tr><td>' + (i + 1) + '</td><td style="text-align:left">' + esc(u.nama) + '</td><td style="text-align:left">' + esc(u.jabatan) + '</td><td>' + esc(u.nik) + '</td><td>' + esc(u.rek) + '</td><td>' + fmtNumber(kotor) + ',-</td><td>' + (pajak ? fmtNumber(pajak) + ',-' : '-') + '</td><td>' + fmtNumber(diterima) + ',-</td></tr>';
+        });
+        if (ut) ut.innerHTML = hu || '<tr><td colspan="8" style="color:#999; padding:10px;">Belum ada data penerima upah.</td></tr>';
+        set('upah_tot_kotor', fmtNumber(tk) + ',-');
+        set('upah_tot_pajak', tp ? fmtNumber(tp) + ',-' : '-');
+        set('upah_tot_diterima', fmtNumber(td) + ',-');
+        set('upah_ttd_koor', gv('in_nama_kuasa2'));
+        set('upah_tgl', tgl);
+    }
+
+    // ========== DOKUMEN BARU: BAST, NOTA, HADIR, NOTULA, FOTO, PB1 ==========
+    function updateDokumenBaru() {
+        const gv = function(id) { const e = document.getElementById(id); return e ? e.value : ''; };
+        const set = function(id, v) { const e = document.getElementById(id); if (e) e.innerText = v; };
+        const setH = function(id, v) { const e = document.getElementById(id); if (e) e.innerHTML = v; };
+        const items = belanjaItems.filter(function(i) { return i.checked; });
+        const total = items.reduce(function(a, b) { return a + b.jumlah; }, 0);
+        const terbilang = gv('in_terbilang') || angkaKeTerbilang(total);
+        const tgl = gv('in_tgl'), hari = gv('in_hari');
+        const pNama = gv('in_nama_penjual') || gv('in_vendor1');
+        const pAlm = gv('in_alamat_penjual');
+        // ===== BAST =====
+        set('out_no_bast', gv('in_no_ba') + '/BAST');
+        set('bast_hari', hari); set('bast_tgl', tgl);
+        set('bast_nama_pihak2', pNama);
+        set('bast_jabatan_pihak2', gv('in_jabatan_penjual'));
+        set('bast_alamat_pihak2', pAlm);
+        set('bast_no_sp', gv('in_no_po')); set('bast_tgl_sp', tgl);
+        set('bast_ttd_pihak2', pNama);
+        let bH = '';
+        items.forEach(function(it, idx) {
+            bH += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td>1</td><td>Paket</td><td>' + fmtNumber(it.jumlah) + ',-</td><td>' + fmtNumber(it.jumlah) + ',-</td></tr>';
+        });
+        setH('out_tabel_bast', bH || '<tr><td colspan="6" style="color:#999; padding:10px;">Belum ada item terceklis.</td></tr>');
+        set('total_bast', fmtNumber(total) + ',-');
+        set('terbilang_bast', terbilang);
+        // ===== NOTA PEMBELIAN =====
+        set('nota_vendor', pNama.toUpperCase());
+        set('nota_alamat', pAlm);
+        set('nota_telp', gv('in_telp_penjual'));
+        set('nota_no', gv('in_no_invoice'));
+        set('nota_tgl', tgl);
+        set('nota_sekolah', gv('in_nama_sekolah'));
+        set('nota_ttd', pNama);
+        set('nota_ttd_penerima', gv('in_nama_bend'));
+        set('nota_tgl_ttd', tgl);
+        let nH = '';
+        items.forEach(function(it, idx) {
+            nH += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td>1</td><td>' + fmtNumber(it.jumlah) + ',-</td><td>' + fmtNumber(it.jumlah) + ',-</td></tr>';
+        });
+        setH('out_tabel_nota', nH || '<tr><td colspan="5" style="color:#999; padding:10px;">Belum ada item terceklis.</td></tr>');
+        set('total_nota', fmtNumber(total) + ',-');
+        set('terbilang_nota', terbilang);
+        const notaFoto = localStorage.getItem('si_foto_nota');
+        setH('nota_foto_box', notaFoto
+            ? '<img src="' + notaFoto + '" style="width:100%; max-height:340px; object-fit:contain; border:1px solid #888; padding:4px;">'
+            : '<div class="foto-placeholder" style="height:220px;">Tempelkan foto <b>Nota Pembelian Asli</b> dari Toko/CV pada kotak ini,<br>atau unggah melalui menu <b>7B. Upload Dokumen Pendukung</b> di panel editor.</div>');
+        // ===== PB1 =====
+        set('pb1_no', gv('in_no_pb1'));
+        set('pb1_tgl', tgl);
+        set('pb1_npwp', gv('in_nik_penjual'));
+        set('pb1_jenis', gv('in_jenis_pajak') || 'Pajak Daerah (PB1)');
+        set('pb1_masa', getCurrentPeriod());
+        const pb1Jml = parseInt(gv('in_pb1_jumlah')) || total;
+        set('pb1_jumlah', fmtNumber(pb1Jml) + ',-');
+        set('pb1_terbilang', angkaKeTerbilang(pb1Jml));
+        const pb1Foto = localStorage.getItem('si_foto_pb1');
+        setH('pb1_foto_box', pb1Foto
+            ? '<img src="' + pb1Foto + '" style="width:100%; max-height:340px; object-fit:contain; border:1px solid #888; padding:4px;">'
+            : '<div class="foto-placeholder" style="height:200px;">Tempelkan / unggah bukti asli <b>Bukti Setoran Pajak Daerah (PB1)</b> pada kotak ini<br>(opsional - hanya untuk transaksi yang dikenakan pajak daerah).</div>');
+        // ===== FOTO DOKUMENTASI =====
+        set('foto_kegiatan', gv('in_catatan'));
+        let fG = '';
+        for (let i = 1; i <= 6; i++) {
+            const f = localStorage.getItem('si_foto_' + i);
+            if (f) {
+                const cap = gv('in_foto_cap_' + i) || ('Foto dokumentasi kegiatan #' + i);
+                fG += '<div class="foto-item"><img src="' + f + '"><div class="foto-cap">' + esc(cap) + '</div></div>';
+            }
+        }
+        setH('foto_grid', fG || '<div class="foto-placeholder" style="grid-column:1/3;">Belum ada foto diunggah. Gunakan menu <b>7B. Upload Dokumen Pendukung</b> di panel editor.</div>');
+        // ===== DAFTAR HADIR =====
+        set('hadir_acara', gv('in_acara_rapat'));
+        set('hadir_hari', hari); set('hadir_tgl', tgl);
+        let hH = '';
+        let no = 0;
+        pesertaList.forEach(function(p) {
+            if (!p.nama && !p.jabatan) return;
+            no++;
+            hH += '<tr><td>' + no + '</td><td style="text-align:left">' + esc(p.nama) + '</td><td></td><td style="text-align:left">' + esc(p.jabatan) + '</td><td></td></tr>';
+        });
+        while (no < 15) { no++; hH += '<tr><td>' + no + '</td><td></td><td></td><td></td><td></td></tr>'; }
+        setH('out_tabel_hadir', hH);
+        // ===== NOTULA =====
+        set('notula_acara', gv('in_acara_rapat'));
+        set('notula_hari', hari); set('notula_tgl', tgl);
+        let pL = '';
+        let pn2 = 0;
+        pesertaList.forEach(function(p) { if (p.nama) { pn2++; pL += pn2 + '. ' + esc(p.nama) + (p.jabatan ? ' (' + esc(p.jabatan) + ')' : '') + '<br>'; } });
+        setH('notula_peserta', pL || '-');
+        const agenda = gv('in_agenda_notula');
+        setH('notula_isi', agenda.split('\n').filter(function(l){ return l.trim(); })
+            .map(function(l) { return '<p style="margin:5px 0; text-align:justify;">' + esc(l) + '</p>'; }).join('') || '<p style="color:#999;">-</p>');
+    }
+
+    // ========== CETAK SATU DOKUMEN ==========
+    function printDocument(id) {
+        const css = document.querySelector('style').innerHTML;
+        const w = window.open('', '_blank');
+        if (!w) { showStatus('Popup diblokir browser. Izinkan popup untuk mencetak.', true); return; }
+        w.document.open();
+        w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Cetak Dokumen</title><style>' + css +
+            ' body { background:#fff; } .container { margin:0 auto; padding:0; width:100%; max-width:190mm; box-shadow:none; } @page { size:portrait; margin:1.5cm; } .no-print { display:none !important; }</style></head><body>');
+        w.document.write(cloneDocHtml(id));
+        w.document.write('<scr' + 'ipt>window.onload = function(){ setTimeout(function(){ window.print(); }, 400); };</scr' + 'ipt></body></html>');
+        w.document.close();
+    }
+
+    // ========== UPLOAD FOTO ==========
+    function compressImage(file, cb) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const maxW = 900;
+                const scale = Math.min(1, maxW / img.width);
+                canvas.width = Math.round(img.width * scale);
+                canvas.height = Math.round(img.height * scale);
+                canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                cb(canvas.toDataURL('image/jpeg', 0.7));
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+    function handleFotoUpload(input, key, previewId) {
+        if (input.files && input.files[0]) {
+            compressImage(input.files[0], function(dataUri) {
+                try { localStorage.setItem(key, dataUri); }
+                catch (e) { showStatus('Penyimpanan penuh! Hapus beberapa foto lama.', true); return; }
+                const p = document.getElementById(previewId);
+                if (p) { p.src = dataUri; p.style.display = 'block'; }
+                showStatus('📷 Foto tersimpan.', false);
+                updateSurat();
+            });
+        }
+    }
+    function clearFoto(key, previewId) {
+        if (!confirm('Hapus foto ini?')) return;
+        localStorage.removeItem(key);
+        const p = document.getElementById(previewId);
+        if (p) { p.src = ''; p.style.display = 'none'; }
+        updateSurat();
+    }
+    function loadFotoPreviews() {
+        [['si_foto_nota','prev_nota'],['si_foto_pb1','prev_pb1']].forEach(function(pair) {
+            const d = localStorage.getItem(pair[0]);
+            const p = document.getElementById(pair[1]);
+            if (d && p) { p.src = d; p.style.display = 'block'; }
+        });
+        for (let i = 1; i <= 6; i++) {
+            const d = localStorage.getItem('si_foto_' + i);
+            const p = document.getElementById('prev_foto_' + i);
+            if (d && p) { p.src = d; p.style.display = 'block'; }
+        }
+    }
+
+    // ========== PDF GENERATION ==========
+    function cloneDocHtml(id) {
+        const el = document.getElementById(id);
+        const c = el.cloneNode(true);
+        c.querySelectorAll('.no-print').forEach(function(n){ n.remove(); });
+        return c.outerHTML;
+    }
+
+    const PRINT_DOCUMENTS = [
+        ['doc-si', '1. Standing Instruction (SI)'],
+        ['doc-kuasa', '2. Surat Kuasa'],
+        ['doc-sptjm', '3. Surat Pernyataan Tanggung Jawab Mutlak (SPTJM)'],
+        ['doc-daftar-upah', '4. Daftar Penerimaan Upah Kerja Tukang'],
+        ['doc-perencanaan', '5. Dokumen Perencanaan'],
+        ['doc-pembandingan', '6. Dokumen Hasil Pembandingan'],
+        ['doc-negosiasi', '7. Dokumen Hasil Negosiasi'],
+        ['doc-kesepakatan', '8. Dokumen Kesepakatan'],
+        ['doc-sp', '9. Surat Pesanan (SP)'],
+        ['doc-spk', '10. Surat Perintah Kerja (SPK)'],
+        ['doc-shp', '11. Surat Hasil Pemeriksaan (SHP)'],
+        ['doc-ba', '12. Berita Acara Pemeriksaan Teknis'],
+        ['doc-kuitansi', '13. Kuitansi Belanja'],
+        ['doc-sk', '14. SK Tim Pelaksana PBJ'],
+        ['doc-bast', '15. Berita Acara Serah Terima (BAST)'],
+        ['doc-nota', '16. Nota Pembelian'],
+        ['doc-hadir', '17. Daftar Hadir'],
+        ['doc-notula', '18. Notula Rapat'],
+        ['doc-foto', '19. Dokumentasi Foto'],
+        ['doc-pb1', '20. Bukti Setoran Pajak Daerah (PB1)']
+    ];
+
+    function renderPrintDocumentSelector() {
+        const box = document.getElementById('print-doc-list');
+        if (!box) return;
+        box.innerHTML = PRINT_DOCUMENTS.map(function(d) {
+            return '<label class="print-doc-item">' +
+                '<input type="checkbox" class="print-doc-check" value="' + d[0] + '" onchange="updatePrintSelectionCount()">' +
+                '<span>' + d[1] + '</span></label>';
+        }).join('');
+        updatePrintSelectionCount();
+    }
+
+    function getSelectedDocumentIds() {
+        return Array.from(document.querySelectorAll('.print-doc-check:checked')).map(function(chk) {
+            return chk.value;
+        });
+    }
+
+    function updatePrintSelectionCount() {
+        const count = getSelectedDocumentIds().length;
+        const el = document.getElementById('print-selected-count');
+        if (el) el.textContent = count + ' dokumen dipilih';
+    }
+
+    function selectAllDocuments() {
+        document.querySelectorAll('.print-doc-check').forEach(function(chk) {
+            chk.checked = true;
+        });
+        updatePrintSelectionCount();
+    }
+
+    function clearAllDocuments() {
+        document.querySelectorAll('.print-doc-check').forEach(function(chk) {
+            chk.checked = false;
+        });
+        updatePrintSelectionCount();
+    }
+
+    function validateSelectedDocuments() {
+        const ids = getSelectedDocumentIds();
+        if (!ids.length) {
+            showStatus('⚠️ Belum ada dokumen yang dipilih. Silakan ceklis minimal satu dokumen.', true);
+            return null;
+        }
+        return ids;
+    }
+
+    function getDocHtml(ids) {
+        ids = ids || getSelectedDocumentIds();
+        let html = ids.map(function(id) {
+            return cloneDocHtml(id);
+        }).join('<div style="page-break-after:always;"></div>');
+
+        if (logoDataUri) {
+            const currentSrc = document.getElementById('out_logo').src;
+            if (currentSrc) html = html.split(currentSrc).join(logoDataUri);
+        }
+        return html;
+    }
+
+    function getPdfOptions() {
+        return {
+            margin: [10, 10, 10, 10],
+            filename: 'SI_SuratKuasaPBJ_' + document.getElementById('in_nama_sekolah').value.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+    }
+
+    async function downloadPdf() {
+        const ids = validateSelectedDocuments();
+        if (!ids) return;
+        try {
+            showStatus('⏳ Membuat PDF dari ' + ids.length + ' dokumen terpilih, harap tunggu...', false);
+            const element = document.createElement('div');
+            element.innerHTML = getDocHtml(ids);
+            const opt = getPdfOptions();
+            await html2pdf().set(opt).from(element).save();
+            showStatus('✅ PDF ' + ids.length + ' dokumen terpilih berhasil di-download!', false);
+        } catch (err) { showStatus('Error: ' + err.message, true); }
+    }
+
+    function printSelectedDocuments() {
+        const ids = validateSelectedDocuments();
+        if (!ids) return;
+
+        const css = document.querySelector('style').innerHTML;
+        const w = window.open('', '_blank');
+        if (!w) {
+            showStatus('Popup diblokir browser. Izinkan popup untuk mencetak.', true);
+            return;
+        }
+
+        w.document.open();
+        w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Cetak Dokumen Terpilih</title><style>' + css +
+            ' body { background:#fff; } .container { margin:0 auto; padding:0; width:100%; max-width:190mm; box-shadow:none; } @page { size:portrait; margin:1.5cm; } .no-print { display:none !important; }</style></head><body>');
+        w.document.write(getDocHtml(ids));
+        w.document.write('<scr' + 'ipt>window.onload = function(){ setTimeout(function(){ window.print(); }, 400); };</scr' + 'ipt></body></html>');
+        w.document.close();
+
+        showStatus('🖨️ Membuka ' + ids.length + ' dokumen terpilih untuk dicetak...', false);
+    }
+
+
+    // ===== DASHBOARD UI =====
+    function dashGo(id, btn) {
+        const el = document.getElementById(id);
+        if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
+        document.querySelectorAll('.side-link').forEach(function(x){x.classList.remove('active');});
+        if (btn) btn.classList.add('active');
+    }
+    function logoutApp() {
+        if (confirm('Keluar dari aplikasi? Data lokal tetap tersimpan.')) {
+            const ls = document.getElementById('login-screen');
+            const app = document.getElementById('app-wrapper');
+            if (app) app.style.display='none';
+            if (ls) ls.style.display='flex';
+            const pass = document.getElementById('password-input');
+            if (pass) { pass.value=''; pass.focus(); }
+        }
+    }
+    function updateDashboardSchoolName(){
+        const input=document.getElementById('in_nama_sekolah');
+        const out=document.getElementById('dash-school-name');
+        if(input && out) out.textContent=input.value || 'Sekolah';
+    }
+
+    // ========== INIT APP ==========
+    function initApp() {
+        loadFormData();
+        loadRekening();
+        currentPeriodKey = getCurrentPeriod();
+        loadBelanjaLocal();
+        loadLogo();
+        loadKuasaData();
+        loadFotoPreviews();
+        updatePeriodFilter();
+        updatePeriodIndicator();
+        updateSurat();
+        renderPrintDocumentSelector();
+        updateDashboardSchoolName();
+        // Auto-save sebelum tab ditutup
+        window.addEventListener('beforeunload', function() {
+            if (isDirty) saveBelanjaLocal();
+        });
+    }
+</script>
+
+</body>
+</html>
