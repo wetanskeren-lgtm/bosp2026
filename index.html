@@ -1804,7 +1804,10 @@ body{background:var(--bg)!important;color:var(--text);}
         'auth/user-not-found':'Akun belum terdaftar.',
         'auth/too-many-requests':'Terlalu banyak percobaan. Coba lagi nanti.',
         'auth/network-request-failed':'Koneksi internet bermasalah.',
-        'permission-denied':'Akses Firestore ditolak. Periksa Firebase Security Rules.'
+        'auth/operation-not-allowed':'Pendaftaran Email/Password belum diaktifkan di Firebase Authentication. Buka Firebase Console → Authentication → Sign-in method, aktifkan Email/Password, lalu simpan.',
+        'auth/unauthorized-domain':'Domain aplikasi belum diizinkan. Buka Firebase Console → Authentication → Settings → Authorized domains, lalu tambahkan domain tempat aplikasi dijalankan.',
+        'auth/api-key-not-valid.-please-pass-a-valid-api-key.':'API key Firebase tidak valid. Periksa konfigurasi firebaseConfig.',
+        'permission-denied':'Akses Cloud Firestore ditolak. Periksa Firestore Database → Rules.'
       };
       return map[c] || (e && e.message) || 'Terjadi kesalahan. Periksa pengaturan Firebase.';
     }
