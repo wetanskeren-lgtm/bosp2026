@@ -537,7 +537,7 @@ body{background:var(--bg)!important;color:var(--text);}
 
 /* Status koneksi dan sinkronisasi Firebase */
 #cloud-sync-status{
- position:fixed;right:16px;bottom:16px;z-index:5000;max-width:min(420px,calc(100vw - 32px));
+ position:fixed;right:16px;top:78px;bottom:auto;z-index:5000;max-width:min(420px,calc(100vw - 32px));
  padding:10px 14px;border-radius:12px;background:#173b63;color:#fff;
  box-shadow:0 8px 24px rgba(0,0,0,.22);font-size:12px;line-height:1.4;
  display:flex;align-items:center;gap:9px;border:1px solid rgba(255,255,255,.2)
@@ -676,7 +676,7 @@ body{background:var(--bg)!important;color:var(--text);}
         
 
         <div id="sec-rekening" class="form-section-title">2. MASTER DATA REKENING</div>
-        <div style="font-size:8pt; color:#bdc3c7; margin-bottom:6px;">Data rekening tersimpan otomatis di browser dan disinkronkan ke Firebase.</div>
+        <div style="font-size:8pt; color:#bdc3c7; margin-bottom:6px;">Data rekening tersimpan otomatis dan disinkronkan ke Firebase.</div>
         <div id="rekening-inputs"></div>
         <button class="btn btn-green btn-small" onclick="addRekeningRow()" style="margin-top:4px;">+ Tambah Rekening</button>
 
@@ -816,7 +816,7 @@ body{background:var(--bg)!important;color:var(--text);}
         </div>
 
         <div id="sec-foto" class="form-section-title">7B. UPLOAD FOTO / DOKUMEN PENDUKUNG</div>
-        <div style="font-size:8pt; color:#bdc3c7; margin-bottom:6px;">Foto dikompres otomatis &amp; tersimpan di browser. Tampil otomatis di dokumen terkait (Nota, Dokumentasi Foto, PB1).</div>
+        <div style="font-size:8pt; color:#bdc3c7; margin-bottom:6px;">Foto dikompres otomatis untuk penyimpanan dan sinkronisasi Firebase. Tampil otomatis di dokumen terkait (Nota, Dokumentasi Foto, PB1).</div>
         <div class="form-grid">
             <div class="input-group"><label>Nota Pembelian Asli (dari Toko/CV):</label>
                 <input type="file" accept="image/*" onchange="handleFotoUpload(this,'si_foto_nota','prev_nota')">
@@ -865,9 +865,8 @@ body{background:var(--bg)!important;color:var(--text);}
             </div>
         </div>
 
-        <div id="sec-print" class="form-section-title">8. SIMPAN DATA & CETAK</div>
+        <div id="sec-print" class="form-section-title">8. CETAK & DOWNLOAD DOKUMEN</div>
         <div class="modern-action-grid" style="margin-top:12px;">
-            <button onclick="saveToLocal()" class="modern-action action-save"><span>💾</span><div><b>Simpan Data Lokal</b><small>Menyimpan semua isian</small></div></button>
             <button onclick="downloadPdf()" class="modern-action action-pdf"><span>📥</span><div><b>Download PDF Terpilih</b><small>Hanya dokumen yang dicentang</small></div></button>
             <button onclick="updateSurat()" class="modern-action action-update"><span>🔄</span><div><b>Update Dokumen</b><small>Perbarui seluruh dokumen</small></div></button>
         </div>
@@ -896,7 +895,7 @@ body{background:var(--bg)!important;color:var(--text);}
 
         <div id="status_msg" class="status-msg"></div>
         <div style="font-size:8pt; color:#95a5a6; text-align:center; margin-top:6px;">
-            Semua isian form & tabel otomatis tersimpan di Local Storage browser Anda (tidak hilang saat tab ditutup).
+            Semua perubahan disimpan otomatis dan disinkronkan ke Firebase saat akun sekolah online. Tidak perlu menekan tombol simpan lokal.
         </div>
     </div>
 
@@ -2091,7 +2090,7 @@ body{background:var(--bg)!important;color:var(--text);}
 
     function saveToLocal() {
         autoSave();
-        showStatus('✅ Data disimpan di browser dan antrean sinkronisasi Firebase diperbarui.', false);
+        showStatus('✅ Data disimpan dan sinkronisasi Firebase diperbarui.', false);
     }
 
     function loadFormData() {
