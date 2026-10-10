@@ -1755,7 +1755,7 @@ body{background:var(--bg)!important;color:var(--text);}
       });
       authMessage('');
     }
-    function cleanNpsn(v){ return String(v||'').replace(/\\D/g,'').trim(); }
+    function cleanNpsn(v){ return String(v||'').replace(/\D/g,'').trim(); }
     function schoolEmail(npsn){ return cleanNpsn(npsn); } // fungsi lama tidak dipakai untuk autentikasi email
 
     async function registrasiSekolah() {
@@ -1766,9 +1766,9 @@ body{background:var(--bg)!important;color:var(--text);}
         const email=document.getElementById('reg-email').value.trim().toLowerCase();
         const pass=document.getElementById('reg-password').value;
         const pass2=document.getElementById('reg-password2').value;
-        if(!/^\\d{8}$/.test(npsn)) throw new Error('NPSN harus terdiri dari 8 angka.');
+        if(!/^\d{8}$/.test(npsn)) throw new Error('NPSN harus terdiri dari 8 angka.');
         if(!nama) throw new Error('Nama sekolah wajib diisi.');
-        if(!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) throw new Error('Masukkan email aktif yang benar untuk pemulihan password.');
+        if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Masukkan email aktif yang benar untuk pemulihan password.');
         if(pass.length<6) throw new Error('Password minimal 6 karakter.');
         if(pass!==pass2) throw new Error('Konfirmasi password tidak sama.');
         authMessage('Memproses registrasi...');
@@ -1815,7 +1815,7 @@ body{background:var(--bg)!important;color:var(--text);}
         const npsn=cleanNpsn(document.getElementById('login-npsn').value);
         const email=document.getElementById('login-email').value.trim().toLowerCase();
         const pass=document.getElementById('login-password').value;
-        if(!/^\\d{8}$/.test(npsn)) throw new Error('Masukkan NPSN yang terdiri dari 8 angka.');
+        if(!/^\d{8}$/.test(npsn)) throw new Error('Masukkan NPSN yang terdiri dari 8 angka.');
         if(!email) throw new Error('Email terdaftar wajib diisi.');
         if(!pass) throw new Error('Password wajib diisi.');
         authMessage('Sedang masuk dan mengambil data online...');
@@ -1843,7 +1843,7 @@ body{background:var(--bg)!important;color:var(--text);}
         if(!firebaseAuth || !firebaseDb) throw new Error('Firebase belum siap.');
         const npsn=cleanNpsn(document.getElementById('reset-npsn').value);
         const email=document.getElementById('reset-email').value.trim().toLowerCase();
-        if(!/^\\d{8}$/.test(npsn)) throw new Error('Masukkan NPSN 8 angka.');
+        if(!/^\d{8}$/.test(npsn)) throw new Error('Masukkan NPSN 8 angka.');
         if(!email) throw new Error('Masukkan email pemulihan yang terdaftar.');
         authMessage('Mengirim tautan pemulihan password...');
         await firebaseAuth.sendPasswordResetEmail(email, {
