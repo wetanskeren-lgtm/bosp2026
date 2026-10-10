@@ -1738,13 +1738,14 @@ body{background:var(--bg)!important;color:var(--text);}
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <script>
     // Konfigurasi Firebase milik Anda
     const firebaseConfig = {
       apiKey: "AIzaSyCiisKPOQJ4VfVbav6a62z_bdzGd82SKKU",
       authDomain: "bosp2026-b2bcc.firebaseapp.com",
       projectId: "bosp2026-b2bcc",
+      databaseURL: "https://bosp2026-b2bcc-default-rtdb.asia-southeast1.firebasedatabase.app",
       storageBucket: "bosp2026-b2bcc.firebasestorage.app",
       messagingSenderId: "943444395157",
       appId: "1:943444395157:web:5b186e98a4ad89deb6079c",
@@ -1754,8 +1755,7 @@ body{background:var(--bg)!important;color:var(--text);}
     try {
       firebaseApp = firebase.initializeApp(firebaseConfig);
       firebaseAuth = firebase.auth();
-      firebaseDb = firebase.firestore();
-      firebaseDb.enablePersistence({synchronizeTabs:true}).catch(()=>{});
+      firebaseDb = firebase.database();
     } catch (e) {
       console.error('Firebase initialization:', e);
     }
@@ -1794,30 +1794,18 @@ body{background:var(--bg)!important;color:var(--text);}
         if(pass!==pass2) throw new Error('Konfirmasi password tidak sama.');
         const btn=document.getElementById('btn-register');
         if(btn) { btn.disabled=true; btn.textContent='Memproses registrasi...'; }
-        authMessage('Memeriksa izin registrasi dan kuota sekolah...');
-        const schoolRef=firebaseDb.collection('schoolAccounts').doc(npsn);
-        const existing=await schoolRef.get();
-        if(existing.exists) throw new Error('NPSN ini sudah terdaftar. Silakan login atau hubungi Admin Pusat.');
-        // Kode dan batas 40 sekolah diverifikasi ulang oleh Firestore Security Rules.
-        // Dokumen pengaturan admin tidak perlu dibaca oleh browser.
+        authMessage('Memeriksa kode khusus, NPSN, dan kuota 40 sekolah...');
+        // Buat akun Auth terlebih dahulu agar penulisan profil dapat diverifikasi oleh Realtime Database Rules.
         createdUser=await firebaseAuth.createUserWithEmailAndPassword(email,pass);
-        const batch=firebaseDb.batch();
-        batch.set(schoolRef,{
-          uid:createdUser.user.uid, npsn, namaSekolah:nama,
-          kodeRegistrasi:kode,
-          createdAt:firebase.firestore.FieldValue.serverTimestamp()
-        });
-        batch.update(firebaseDb.collection('adminSettings').doc('registrasi'),{
-          terpakai:firebase.firestore.FieldValue.increment(1),
-          lastNpsn:npsn
-        });
+        const profileRef=firebaseDb.ref('schoolAccounts/'+npsn);
+        const profile={uid:createdUser.user.uid,npsn:npsn,namaSekolah:nama,kodeRegistrasi:kode,createdAt:firebase.database.ServerValue.TIMESTAMP};
         try {
-          await batch.commit();
+          await profileRef.set(profile);
         } catch(err) {
           await createdUser.user.delete().catch(()=>{});
           createdUser=null;
-          if(err && (err.code==='permission-denied' || err.code==='firestore/permission-denied')) {
-            throw new Error('Kode khusus salah/tidak aktif, kuota 40 sekolah sudah penuh, atau pengaturan Admin Pusat belum dipasang. Minta kode terbaru kepada Admin Pusat.');
+          if(err && (err.code==='PERMISSION_DENIED' || err.code==='permission-denied')) {
+            throw new Error('Registrasi ditolak: kode khusus salah/tidak aktif, NPSN sudah terdaftar, kuota 40 sekolah penuh, atau Realtime Database Rules belum dipasang. Hubungi Admin Pusat.');
           }
           throw err;
         }
@@ -1827,6 +1815,7 @@ body{background:var(--bg)!important;color:var(--text);}
         document.getElementById('login-password').value=pass;
         document.getElementById('reg-code').value='';
         authMessage('Registrasi berhasil. Jika email verifikasi dikirim, silakan periksa email. Anda dapat masuk sekarang.');
+        await firebaseAuth.signOut();
         showAuthPanel('login');
       } catch(e) {
         authMessage(authErrorText(e),true);
@@ -1850,7 +1839,7 @@ body{background:var(--bg)!important;color:var(--text);}
         'auth/operation-not-allowed':'Pendaftaran Email/Password belum diaktifkan di Firebase Authentication. Buka Firebase Console → Authentication → Sign-in method, aktifkan Email/Password, lalu simpan.',
         'auth/unauthorized-domain':'Domain aplikasi belum diizinkan. Buka Firebase Console → Authentication → Settings → Authorized domains, lalu tambahkan domain tempat aplikasi dijalankan.',
         'auth/api-key-not-valid.-please-pass-a-valid-api-key.':'API key Firebase tidak valid. Periksa konfigurasi firebaseConfig.',
-        'permission-denied':'Akses Cloud Firestore ditolak. Periksa Firestore Database → Rules.'
+        'permission-denied':'Akses Realtime Database ditolak. Periksa Realtime Database → Rules.'
       };
       return map[c] || (e && e.message) || 'Terjadi kesalahan. Periksa pengaturan Firebase.';
     }
@@ -1866,9 +1855,9 @@ body{background:var(--bg)!important;color:var(--text);}
         if(!pass) throw new Error('Password wajib diisi.');
         authMessage('Sedang masuk dan mengambil data online...');
         const cred=await firebaseAuth.signInWithEmailAndPassword(email,pass);
-        const snap=await firebaseDb.collection('schoolAccounts').doc(npsn).get();
-        if(!snap.exists) { await firebaseAuth.signOut(); throw new Error('NPSN belum terdaftar.'); }
-        const profile=snap.data();
+        const snap=await firebaseDb.ref('schoolAccounts/'+npsn).once('value');
+        if(!snap.exists()) { await firebaseAuth.signOut(); throw new Error('NPSN belum terdaftar.'); }
+        const profile=snap.val() || {};
         if(profile.uid!==cred.user.uid || String(profile.npsn)!==npsn) { await firebaseAuth.signOut(); throw new Error('NPSN tidak cocok dengan akun yang masuk.'); }
         // Pisahkan data lokal berdasarkan akun sekolah sebelum mengambil data cloud.
         // Jika ini akun pertama di browser yang sudah memiliki data lama, minta konfirmasi
@@ -1920,10 +1909,9 @@ body{background:var(--bg)!important;color:var(--text);}
       } catch(e) { authMessage(authErrorText(e),true); }
     }
 
-    // ===== CLOUD SYNC PER SEKOLAH =====
-    // Setiap NPSN memiliki koleksi appData sendiri. Semua data si_* termasuk logo/foto
-    // dicoba disimpan ke Firestore per dokumen. Foto berukuran besar mungkin perlu
-    // Firebase Storage jika melewati batas ukuran dokumen Firestore.
+    // ===== CLOUD SYNC PER SEKOLAH MELALUI REALTIME DATABASE =====
+    // Profil akun ada di /schoolAccounts/{NPSN}; data aplikasi berada di /schoolData/{NPSN}/appData/{key}.
+    // Security Rules wajib dipasang agar setiap sekolah hanya dapat membaca/menulis datanya sendiri.
     const CLOUD_EXCLUDED_KEYS = /^(?:__bosp_last_school_npsn|__bosp_.*)$/;
     let cloudSyncReady=false;
     const cloudWriteTimers = new Map();
@@ -1935,99 +1923,75 @@ body{background:var(--bg)!important;color:var(--text);}
       const t=document.getElementById('cloud-sync-title');
       const d=document.getElementById('cloud-sync-detail');
       if(!box || !t || !d) return;
-      box.dataset.state=state;
-      t.textContent=title;
-      d.textContent=detail || '';
+      box.dataset.state=state; t.textContent=title; d.textContent=detail || '';
       box.style.display=currentSchoolUser ? 'flex' : 'none';
     }
     function refreshCloudStatus() {
       if(!currentSchoolUser) return;
-      if(!navigator.onLine) {
-        setCloudStatus('offline','Offline — perubahan disimpan sementara','Saat internet kembali, Firebase akan melanjutkan sinkronisasi otomatis.');
-      } else if(cloudSyncErrors) {
-        setCloudStatus('error','Sinkronisasi perlu diperiksa',cloudSyncErrors+' perubahan belum terkonfirmasi. Periksa koneksi dan aturan Firestore.');
-      } else if(cloudPendingKeys.size) {
-        setCloudStatus('loading','Menyinkronkan data...','Menunggu '+cloudPendingKeys.size+' perubahan tersimpan ke Firebase.');
-      } else {
-        setCloudStatus('ready','Online — data tersinkron','Akun sekolah NPSN '+currentSchoolUser.npsn+' • data tersimpan di Firebase.');
-      }
+      if(!navigator.onLine) setCloudStatus('offline','Offline — perubahan disimpan sementara','Saat internet kembali, Realtime Database akan melanjutkan sinkronisasi otomatis.');
+      else if(cloudSyncErrors) setCloudStatus('error','Sinkronisasi perlu diperiksa',cloudSyncErrors+' perubahan belum terkonfirmasi. Periksa koneksi dan Realtime Database Rules.');
+      else if(cloudPendingKeys.size) setCloudStatus('loading','Menyinkronkan data...','Menunggu '+cloudPendingKeys.size+' perubahan tersimpan ke Firebase.');
+      else setCloudStatus('ready','Online — data tersinkron','Akun sekolah NPSN '+currentSchoolUser.npsn+' • data tersimpan di Realtime Database.');
     }
 
     async function loadSchoolCloudData() {
       if(!currentSchoolUser) return;
       cloudSyncReady=false;
-      const ref=firebaseDb.collection('schoolAccounts').doc(currentSchoolUser.npsn).collection('appData');
+      const ref=firebaseDb.ref('schoolData/'+currentSchoolUser.npsn+'/appData');
       let snap;
-      try {
-        snap=await ref.get();
-      } catch(err) {
+      try { snap=await ref.once('value'); }
+      catch(err) {
         setCloudStatus('error','Data cloud belum bisa dibaca',authErrorText(err));
-        throw new Error('Data sekolah belum dapat diambil dari Firebase. Pastikan internet aktif dan Firestore Rules sudah dipasang. '+(err.message||''));
+        throw new Error('Data sekolah belum dapat diambil dari Realtime Database. Pastikan internet aktif dan Realtime Database Rules sudah dipasang. '+(err.message||''));
       }
       const remoteKeys=new Set();
-      snap.forEach(doc=>{
-        remoteKeys.add(doc.id);
-        const data=doc.data();
-        if(data && Object.prototype.hasOwnProperty.call(data,'value')) {
-          try { localStorage.setItem(doc.id, JSON.stringify(data.value)); }
-          catch(e) { console.warn('Tidak dapat memuat data lokal:',doc.id,e); }
-        }
+      snap.forEach(child=>{
+        const key=child.key; const value=child.val();
+        if(!key) return;
+        remoteKeys.add(key);
+        try { localStorage.setItem(key, typeof value==='string' ? value : JSON.stringify(value)); }
+        catch(e) { console.warn('Tidak dapat memuat data lokal:',key,e); }
       });
-
-      // Migrasi data lama hanya untuk akun yang sedang aktif, dan hanya jika key
-      // tersebut belum ada di cloud. Data akun lain dibersihkan saat pergantian NPSN.
-      const batch=firebaseDb.batch();
+      // Migrasi data lokal hanya jika key belum ada di cloud.
       let count=0;
-      for(let i=0;i<localStorage.length;i++){
+      for(let i=0;i<localStorage.length;i++) {
         const key=localStorage.key(i);
-        if(!key || CLOUD_EXCLUDED_KEYS.test(key) || remoteKeys.has(key)) continue;
-        // Jangan mengunggah key internal browser.
-        if(!/^si_/.test(key)) continue;
+        if(!key || CLOUD_EXCLUDED_KEYS.test(key) || remoteKeys.has(key) || !/^si_/.test(key)) continue;
+        const raw=localStorage.getItem(key);
+        if(raw===null) continue;
         try {
-          const raw=localStorage.getItem(key);
-          if(raw===null) continue;
-          const value=JSON.parse(raw);
-          batch.set(ref.doc(key),{value,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
-          remoteKeys.add(key);
-          count++;
-          if(count>=400) break;
+          let value; try { value=JSON.parse(raw); } catch(e) { value=raw; }
+          await ref.child(key).set(value);
+          remoteKeys.add(key); count++;
         } catch(e) {
-          console.warn('Lewati migrasi data lokal:',key,e);
+          console.warn('Lewati migrasi data lokal:',key,e); cloudSyncErrors++;
         }
       }
-      if(count) {
-        setCloudStatus('loading','Menyimpan data awal...','Memindahkan '+count+' bagian data ke Firebase.');
-        await batch.commit();
-      }
+      if(count) setCloudStatus('loading','Menyimpan data awal...','Memindahkan '+count+' bagian data ke Realtime Database.');
       cloudSyncReady=true;
-      cloudSyncErrors=0;
+      if(!cloudSyncErrors) cloudSyncErrors=0;
       refreshCloudStatus();
     }
 
     function scheduleCloudSave(key,value,remove=false) {
-      if(!currentSchoolUser || !cloudSyncReady || !key || CLOUD_EXCLUDED_KEYS.test(key)) return;
-      if(!/^si_/.test(key)) return;
+      if(!currentSchoolUser || !cloudSyncReady || !key || CLOUD_EXCLUDED_KEYS.test(key) || !/^si_/.test(key)) return;
       if(cloudWriteTimers.has(key)) clearTimeout(cloudWriteTimers.get(key));
-      cloudPendingKeys.add(key);
-      refreshCloudStatus();
+      cloudPendingKeys.add(key); refreshCloudStatus();
+      const schoolNpsn=currentSchoolUser.npsn;
       const timer=setTimeout(async()=>{
         cloudWriteTimers.delete(key);
         try {
-          const doc=firebaseDb.collection('schoolAccounts').doc(currentSchoolUser.npsn).collection('appData').doc(key);
-          if(remove) await doc.delete();
+          const ref=firebaseDb.ref('schoolData/'+schoolNpsn+'/appData/'+key);
+          if(remove) await ref.remove();
           else {
-            let parsed;
-            try { parsed=JSON.parse(value); } catch(e) { parsed=value; }
-            await doc.set({value:parsed,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+            let parsed; try { parsed=JSON.parse(value); } catch(e) { parsed=value; }
+            await ref.set(parsed);
           }
-          cloudPendingKeys.delete(key);
-          cloudSyncErrors=0;
+          cloudPendingKeys.delete(key); cloudSyncErrors=0;
         } catch(e) {
-          // Firestore persistence queues writes while offline; real rule/size errors are surfaced.
-          console.error('Gagal sinkronisasi cloud:',key,e);
-          cloudSyncErrors++;
-          cloudPendingKeys.delete(key);
-          if(e && (e.code==='permission-denied' || e.code==='invalid-argument' || e.code==='resource-exhausted')) {
+          console.error('Gagal sinkronisasi Realtime Database:',key,e);
+          cloudSyncErrors++; cloudPendingKeys.delete(key);
+          if(e && (e.code==='PERMISSION_DENIED' || e.code==='permission-denied' || e.code==='INVALID_ARGUMENT')) {
             setCloudStatus('error','Gagal menyimpan ke Firebase',key+': '+(e.message||e.code)+'. Data lokal masih ada di browser ini.');
           }
         }
@@ -2049,14 +2013,11 @@ body{background:var(--bg)!important;color:var(--text);}
     };
     window.addEventListener('online',function(){
       if(currentSchoolUser) {
-        setCloudStatus('loading','Internet kembali','Firebase sedang melanjutkan sinkronisasi data.');
-        // Ulangi penyimpanan key lokal setelah koneksi pulih.
+        setCloudStatus('loading','Internet kembali','Realtime Database sedang melanjutkan sinkronisasi data.');
         cloudSyncErrors=0;
-        if(cloudSyncReady) {
-          for(let i=0;i<localStorage.length;i++){
-            const k=localStorage.key(i);
-            if(k && /^si_/.test(k) && !CLOUD_EXCLUDED_KEYS.test(k)) scheduleCloudSave(k,localStorage.getItem(k),false);
-          }
+        if(cloudSyncReady) for(let i=0;i<localStorage.length;i++) {
+          const k=localStorage.key(i);
+          if(k && /^si_/.test(k) && !CLOUD_EXCLUDED_KEYS.test(k)) scheduleCloudSave(k,localStorage.getItem(k),false);
         }
         refreshCloudStatus();
       }
@@ -3084,7 +3045,7 @@ body{background:var(--bg)!important;color:var(--text);}
 
     // ========== UPLOAD FOTO OTOMATIS DIPERKECIL ==========
     // Gambar disimpan sebagai JPEG, sisi terpanjang maksimal 800 px dan target sekitar 120 KB.
-    // Ini mengurangi pemakaian localStorage dan ukuran data yang dikirim ke Firestore.
+    // Ini mengurangi pemakaian localStorage dan ukuran data yang dikirim ke Realtime Database.
     function compressImageSource(source, cb) {
         const img = new Image();
         img.onload = function() {
@@ -3331,7 +3292,7 @@ body{background:var(--bg)!important;color:var(--text);}
           if (typeof saveBelanjaLocal==='function') saveBelanjaLocal();
           if (typeof saveRekening==='function') saveRekening();
           if (typeof saveKuasaData==='function') saveKuasaData();
-          // Beri waktu debounce singkat sebelum sign-out; antrean offline Firestore tetap persisten.
+          // Beri waktu debounce singkat sebelum sign-out; sinkronisasi Realtime Database selesai atau antrean lokal tetap tersedia.
           await new Promise(resolve=>setTimeout(resolve,550));
           if(firebaseAuth) await firebaseAuth.signOut();
         } catch(e) { console.warn('Sign out:',e); }
