@@ -786,6 +786,14 @@ body{background:var(--bg)!important;color:var(--text);}
         <div id="peserta-inputs"></div>
         <button class="btn btn-green btn-small" onclick="addPeserta()">+ Tambah Peserta</button>
 
+        <div id="sec-penerima-manmin" class="form-section-title">5C. INPUT PENERIMA MAN/MIN</div>
+        <div style="font-size:9pt;color:#71849a;margin-bottom:8px;">Isi daftar penerima. Nomor, nama, nominal, tanda tangan, dan keterangan akan tampil pada dokumen cetak.</div>
+        <div style="display:grid;grid-template-columns:55px 2fr 1fr 1.5fr 1.5fr 40px;gap:5px;font-size:8pt;color:#71849a;padding:0 6px;margin-bottom:4px;">
+            <div>Nomor</div><div>Nama</div><div>Nominal (Rp)</div><div>Tanda Tangan</div><div>Keterangan</div><div></div>
+        </div>
+        <div id="penerima-manmin-inputs"></div>
+        <button class="btn btn-green btn-small" onclick="addPenerimaManmin()" style="margin-top:6px;">+ Tambah Penerima MAN/MIN</button>
+
         <div class="form-section-title">6. CATATAN & TERBILANG</div>
         <div class="form-grid">
             <div class="input-group"><label>Catatan:</label><input type="text" id="in_catatan" value="Belanja Kebutuhan Sekolah (Bulanan)" oninput="autoSave()"></div>
@@ -866,6 +874,24 @@ body{background:var(--bg)!important;color:var(--text);}
         </div>
 
         <div id="sec-print" class="form-section-title">8. CETAK & DOWNLOAD DOKUMEN</div>
+        <div class="modern-action-grid" style="margin-top:12px;">
+            <button onclick="downloadPdf()" class="modern-action action-pdf"><span>📥</span><div><b>Download PDF Terpilih</b><small>Hanya dokumen yang dicentang</small></div></button>
+            <button onclick="updateSurat()" class="modern-action action-update"><span>🔄</span><div><b>Update Dokumen</b><small>Perbarui seluruh dokumen</small></div></button>
+        </div>
+
+        <div class="form-section-title">💾 BACKUP & PEMULIHAN DATA</div>
+        <div style="background:#fff;border:1px solid #dce7f2;border-radius:12px;padding:14px;margin:10px 0 16px;box-shadow:0 4px 14px rgba(25,67,105,.06);">
+            <div style="font-size:11px;line-height:1.5;color:#526b82;margin-bottom:10px;">
+                Simpan cadangan semua data aplikasi sekolah (identitas, rekening, belanja, penerima MAN/MIN, dokumen, dan foto yang tersimpan). Simpan file backup di tempat aman. Upload backup akan mengganti data aplikasi lokal saat ini.
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                <button type="button" class="btn btn-green" onclick="backupSemuaData()">⬇️ Backup Semua Data</button>
+                <button type="button" class="btn btn-blue" onclick="document.getElementById('file-backup-data').click()">⬆️ Upload Data Backup</button>
+                <input type="file" id="file-backup-data" accept=".json,application/json" style="display:none" onchange="pulihkanBackupData(this)">
+            </div>
+            <div style="font-size:9px;color:#71849a;margin-top:8px;">Format file: JSON. Untuk pemulihan, pilih file backup yang sebelumnya diunduh dari aplikasi ini.</div>
+        </div>
+
         <div class="print-selector">
             <div class="print-selector-header">
                 <div>
@@ -884,6 +910,7 @@ body{background:var(--bg)!important;color:var(--text);}
             <div class="print-doc-list" id="print-doc-list"></div>
             <div class="print-panel-actions">
                 <button type="button" onclick="printSelectedDocuments()" class="panel-print-btn">🖨️ Cetak Dokumen Terpilih</button>
+                <button type="button" onclick="downloadPdf()" class="panel-pdf-btn">📥 Download PDF Terpilih</button>
             </div>
         </div>
 
@@ -1665,6 +1692,25 @@ body{background:var(--bg)!important;color:var(--text);}
 
     <div class="page-break"></div>
 
+    <!-- DAFTAR PENERIMA MAN/MIN -->
+    <div id="doc-penerima-manmin" class="container">
+        <div class="doc-toolbar no-print"><button class="btn btn-blue btn-small" onclick="printDocument('doc-penerima-manmin')">🖨️ Cetak Dokumen Ini</button></div>
+        <div class="header">
+            <div class="header-text" style="margin-left:0;">
+                <h3>DAFTAR PENERIMA MAN/MIN</h3>
+                <h2><span class="out_nama_sekolah_class"></span></h2>
+                <p>Periode: <span class="out_periode_class"></span></p>
+            </div>
+        </div>
+        <table class="data-table" style="font-size:10pt;margin-top:20px;">
+            <thead><tr><th style="width:55px;">Nomor</th><th>Nama</th><th style="width:130px;">Nominal (Rp)</th><th style="width:150px;">Tanda Tangan</th><th style="width:150px;">Keterangan</th></tr></thead>
+            <tbody id="out_tabel_penerima_manmin"></tbody>
+            <tfoot><tr><th colspan="2" style="text-align:right;">TOTAL</th><th id="out_total_penerima_manmin"></th><th colspan="2"></th></tr></tfoot>
+        </table>
+    </div>
+
+    <div class="page-break"></div>
+
     <!-- 14. NOTULA RAPAT -->
     <div id="doc-notula" class="container">
         <div class="doc-toolbar no-print"><button class="btn btn-blue btn-small" onclick="printDocument('doc-notula')">🖨️ Cetak Dokumen Ini</button></div>
@@ -2058,6 +2104,74 @@ body{background:var(--bg)!important;color:var(--text);}
         if (el) {
             el.innerHTML = '📅 Periode Aktif: <b>' + period + '</b> ' + (exists ? '<span style="color:#2ecc71;">✓ Tersimpan</span>' : '<span style="color:#e74c3c;">● Belum Tersimpan</span>');
         }
+    }
+
+    // ========== BACKUP & PEMULIHAN SEMUA DATA APLIKASI ==========
+    function backupSemuaData() {
+        try {
+            const data = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                // Data aplikasi memakai awalan si_; jangan ikutkan token/login akun.
+                if (key && /^si_/.test(key)) data[key] = localStorage.getItem(key);
+            }
+            const payload = {
+                format: 'BOSP2026_BACKUP',
+                version: 1,
+                createdAt: new Date().toISOString(),
+                schoolNpsn: (typeof currentSchoolUser !== 'undefined' && currentSchoolUser) ? currentSchoolUser.npsn : '',
+                data: data
+            };
+            const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json;charset=utf-8'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const date = new Date().toISOString().slice(0,10);
+            a.href = url; a.download = 'backup_BOSP2026_' + (payload.schoolNpsn || 'sekolah') + '_' + date + '.json';
+            document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+            if (typeof showStatus === 'function') showStatus('✅ Backup berhasil dibuat. Simpan file JSON di tempat aman.', false);
+            else alert('Backup berhasil dibuat. Simpan file JSON di tempat aman.');
+        } catch (err) {
+            alert('Backup gagal dibuat: ' + (err.message || err));
+        }
+    }
+
+    function pulihkanBackupData(input) {
+        const file = input && input.files && input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function() {
+            try {
+                const backup = JSON.parse(reader.result);
+                if (!backup || backup.format !== 'BOSP2026_BACKUP' || !backup.data || typeof backup.data !== 'object' || Array.isArray(backup.data)) {
+                    throw new Error('Format file tidak dikenali. Pilih file backup JSON dari aplikasi BOSP 2026.');
+                }
+                const keys = Object.keys(backup.data);
+                if (!keys.length) throw new Error('File backup tidak berisi data aplikasi.');
+                if (!confirm('Pulihkan ' + keys.length + ' bagian data dari backup tanggal ' + (backup.createdAt || 'tidak diketahui') + '? Data aplikasi saat ini akan diganti. Disarankan buat backup kondisi sekarang terlebih dahulu.')) {
+                    input.value = ''; return;
+                }
+                // Hapus data aplikasi yang ada agar pemulihan sesuai isi file, tanpa menghapus data login.
+                const oldKeys = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && /^si_/.test(key)) oldKeys.push(key);
+                }
+                oldKeys.forEach(key => localStorage.removeItem(key));
+                keys.forEach(key => {
+                    if (!/^si_/.test(key)) return;
+                    const value = backup.data[key];
+                    if (typeof value !== 'string') throw new Error('Data backup tidak valid pada bagian ' + key + '.');
+                    localStorage.setItem(key, value);
+                });
+                alert('Pemulihan backup selesai. Aplikasi akan dimuat ulang agar seluruh data tampil kembali.');
+                location.reload();
+            } catch (err) {
+                alert('Tidak dapat memulihkan backup: ' + (err.message || err));
+                input.value = '';
+            }
+        };
+        reader.onerror = function() { alert('File backup gagal dibaca.'); input.value = ''; };
+        reader.readAsText(file);
     }
 
     // ========== AUTO SAVE & LOAD ==========
@@ -2773,12 +2887,65 @@ body{background:var(--bg)!important;color:var(--text);}
         set('sk_tgl', tgl);
         set('sk_no_lamp', gv('in_no_sk'));
         set('sk_tgl_lamp', tgl);
+        updatePenerimaManminDocument();
     }
 
     // ========== SURAT KUASA BARU + SPTJM + DAFTAR UPAH ==========
     let pemberiKuasa = [];
     let upahList = [];
     let pesertaList = [];
+    let penerimaManminList = [];
+
+    function loadPenerimaManmin() {
+        try { penerimaManminList = JSON.parse(localStorage.getItem('si_penerima_manmin') || '[]'); } catch (e) { penerimaManminList = []; }
+        if (!penerimaManminList.length) penerimaManminList.push({ nomor: '1', nama: '', nominal: 0, tandaTangan: '', keterangan: '' });
+        renderPenerimaManminRows();
+    }
+    function savePenerimaManmin() {
+        localStorage.setItem('si_penerima_manmin', JSON.stringify(penerimaManminList));
+    }
+    function renderPenerimaManminRows() {
+        const c = document.getElementById('penerima-manmin-inputs');
+        if (!c) return;
+        c.innerHTML = '';
+        penerimaManminList.forEach(function(p, i) {
+            const div = document.createElement('div');
+            div.className = 'rekening-row';
+            div.style.gridTemplateColumns = '55px 2fr 1fr 1.5fr 1.5fr 40px';
+            div.innerHTML = '<input type="text" value="' + esc(p.nomor || (i + 1)) + '" onchange="updPenerimaManmin(' + i + ',\'nomor\',this.value)" placeholder="Nomor">' +
+                '<input type="text" value="' + esc(p.nama) + '" onchange="updPenerimaManmin(' + i + ',\'nama\',this.value)" placeholder="Nama penerima">' +
+                '<input type="number" min="0" value="' + (Number(p.nominal) || 0) + '" onchange="updPenerimaManmin(' + i + ',\'nominal\',this.value)" placeholder="Nominal">' +
+                '<input type="text" value="' + esc(p.tandaTangan) + '" onchange="updPenerimaManmin(' + i + ',\'tandaTangan\',this.value)" placeholder="Nama/ruang tanda tangan">' +
+                '<input type="text" value="' + esc(p.keterangan) + '" onchange="updPenerimaManmin(' + i + ',\'keterangan\',this.value)" placeholder="Keterangan">' +
+                '<button type="button" onclick="delPenerimaManmin(' + i + ')" style="background:#e74c3c;color:#fff;border:none;height:25px;border-radius:3px;cursor:pointer;">X</button>';
+            c.appendChild(div);
+        });
+    }
+    function updPenerimaManmin(i, f, v) {
+        penerimaManminList[i][f] = f === 'nominal' ? (Number(v) || 0) : v;
+        savePenerimaManmin(); updateSurat();
+    }
+    function addPenerimaManmin() {
+        penerimaManminList.push({ nomor: String(penerimaManminList.length + 1), nama: '', nominal: 0, tandaTangan: '', keterangan: '' });
+        savePenerimaManmin(); renderPenerimaManminRows(); updateSurat();
+    }
+    function delPenerimaManmin(i) {
+        penerimaManminList.splice(i, 1);
+        penerimaManminList.forEach(function(p, idx) { if (!p.nomor) p.nomor = String(idx + 1); });
+        if (!penerimaManminList.length) penerimaManminList.push({ nomor: '1', nama: '', nominal: 0, tandaTangan: '', keterangan: '' });
+        savePenerimaManmin(); renderPenerimaManminRows(); updateSurat();
+    }
+    function updatePenerimaManminDocument() {
+        const tbody = document.getElementById('out_tabel_penerima_manmin');
+        if (!tbody) return;
+        let total = 0;
+        tbody.innerHTML = penerimaManminList.map(function(p, i) {
+            const nominal = Number(p.nominal) || 0; total += nominal;
+            return '<tr><td>' + esc(p.nomor || (i + 1)) + '</td><td style="text-align:left;">' + esc(p.nama) + '</td><td style="text-align:right;">' + fmtNumber(nominal) + '</td><td style="height:48px;">' + esc(p.tandaTangan) + '</td><td style="text-align:left;">' + esc(p.keterangan) + '</td></tr>';
+        }).join('');
+        const totalEl = document.getElementById('out_total_penerima_manmin');
+        if (totalEl) totalEl.textContent = fmtNumber(total);
+    }
 
     function loadKuasaData() {
         const saved = localStorage.getItem('si_kuasa_data');
@@ -3161,6 +3328,7 @@ body{background:var(--bg)!important;color:var(--text);}
         ['doc-bast', '15. Berita Acara Serah Terima (BAST)'],
         ['doc-nota', '16. Nota Pembelian'],
         ['doc-hadir', '17. Daftar Hadir'],
+        ['doc-penerima-manmin', '18. Daftar Penerima MAN/MIN'],
         ['doc-notula', '18. Notula Rapat'],
         ['doc-foto', '19. Dokumentasi Foto'],
         ['doc-pb1', '20. Bukti Setoran Pajak Daerah (PB1)']
@@ -3314,6 +3482,7 @@ body{background:var(--bg)!important;color:var(--text);}
         loadBelanjaLocal();
         loadLogo();
         loadKuasaData();
+        loadPenerimaManmin();
         loadFotoPreviews();
         shrinkExistingImages();
         updatePeriodFilter();
