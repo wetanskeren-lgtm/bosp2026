@@ -315,10 +315,12 @@ body{background:var(--bg)!important;color:var(--text);}
 .action-reset{background:linear-gradient(135deg,#ed4c48,#f46b67);}
 
 .print-selector{
+    display:none;
     position:fixed;right:18px;top:88px;width:352px;max-height:calc(100vh - 106px);z-index:1400;
     background:#fff!important;color:var(--text)!important;padding:17px!important;border-radius:16px!important;
     border:1px solid var(--line);box-shadow:0 12px 35px rgba(26,63,99,.14);margin:0!important;overflow:hidden;
 }
+.print-selector.is-open{display:block!important;}
 .print-selector-header{display:block!important;margin:0 0 10px!important;}
 .print-selector-title{color:#174b7d!important;font-size:14px!important;letter-spacing:.1px;}
 .print-selector-subtitle{font-size:9px;color:#8091a4;margin-top:3px;}
@@ -638,7 +640,7 @@ body{background:var(--bg)!important;color:var(--text);}
     <button class="side-link" onclick="dashGo('sec-kuasa',this)"><span>♙</span> Surat Kuasa</button>
     <button class="side-link" onclick="dashGo('sec-pbj',this)"><span>▤</span> Dokumen PBJ</button>
     <button class="side-link" onclick="dashGo('sec-foto',this)"><span>▧</span> Foto & Pendukung</button>
-    <button class="side-link" onclick="dashGo('sec-print',this)"><span>🖨</span> Cetak / Download</button>
+    <button class="side-link" id="side-print-toggle" onclick="togglePrintSelector(this)"><span>🖨</span> Cetak Dokumen Terpilih</button>
     <div class="side-tip">
         <div class="tip-icon">💡</div>
         <b>Tips</b>
@@ -921,7 +923,10 @@ body{background:var(--bg)!important;color:var(--text);}
         <div class="print-selector">
             <div class="print-selector-header">
                 <div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
                     <div class="print-selector-title">📋 DOKUMEN TERPILIH</div>
+                    <button type="button" class="select-pill select-none" onclick="togglePrintSelector()" aria-label="Tutup panel cetak">✕ Tutup</button>
+                </div>
                     <div class="print-selector-subtitle">Centang dokumen yang ingin dicetak atau diunduh.</div>
                 </div>
                 <div class="print-actions">
@@ -3506,6 +3511,16 @@ body{background:var(--bg)!important;color:var(--text);}
         showStatus('🖨️ Membuka ' + ids.length + ' dokumen terpilih untuk dicetak...', false);
     }
 
+
+    // Panel dokumen terpilih disembunyikan sampai menu sidebar diklik.
+    function togglePrintSelector(btn) {
+        const panel = document.querySelector('.print-selector');
+        if (!panel) return;
+        const opening = !panel.classList.contains('is-open');
+        panel.classList.toggle('is-open', opening);
+        document.querySelectorAll('.side-link').forEach(function(x){x.classList.remove('active');});
+        if (opening && btn) btn.classList.add('active');
+    }
 
     // ===== DASHBOARD UI =====
     function dashGo(id, btn) {
