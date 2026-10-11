@@ -576,6 +576,13 @@ body{background:var(--bg)!important;color:var(--text);}
  .belanja-toolbar .btn{font-size:9px}
 }
 
+
+/* NAVIGASI: konten disembunyikan sampai menu sidebar dipilih */
+#editor-panel.dashboard-nav-ready > * { display:none; }
+#editor-panel.dashboard-nav-ready > *.nav-visible { display:block; }
+#editor-panel.dashboard-nav-ready > .nav-visible.editor-welcome { display:flex; }
+#editor-panel.dashboard-nav-ready > .print-selector.nav-visible { display:block!important; }
+
 </style>
 <base target="_blank">
 </head>
@@ -652,7 +659,7 @@ body{background:var(--bg)!important;color:var(--text);}
     <div class="side-footer">SI + PBJ Digital<br><span>SDN Majalengka Wetan VIII</span></div>
 </aside>
 
-    <div id="editor-panel">
+    <div id="editor-panel" class="dashboard-nav-ready">
         <div class="editor-welcome">
             <div class="welcome-icon">📄</div>
             <div class="welcome-text">
@@ -3516,21 +3523,49 @@ body{background:var(--bg)!important;color:var(--text);}
 
 
     // Panel dokumen terpilih disembunyikan sampai menu sidebar diklik.
+    function showDashboardSection(id, btn) {
+        const panel = document.getElementById('editor-panel');
+        if (!panel) return;
+        panel.classList.add('dashboard-nav-ready');
+        const children = Array.from(panel.children);
+        children.forEach(el => el.classList.remove('nav-visible'));
+        const anchors = ['sec-identitas','sec-rekening','sec-belanja','sec-kuasa','sec-pbj','sec-foto'];
+        const startEl = document.getElementById(id);
+        if (!startEl) return;
+        const start = children.indexOf(startEl);
+        let end = children.length;
+        for (let i = start + 1; i < children.length; i++) {
+            if (anchors.includes(children[i].id)) { end = i; break; }
+        }
+        for (let i = start; i < end; i++) children[i].classList.add('nav-visible');
+        // Beranda juga menampilkan pengantar aplikasi.
+        if (id === 'sec-identitas') {
+            const welcome = panel.querySelector('.editor-welcome');
+            if (welcome) welcome.classList.add('nav-visible');
+        }
+        document.querySelectorAll('.side-link').forEach(x => x.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        startEl.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+
     function togglePrintSelector(btn) {
         const panel = document.querySelector('.print-selector');
-        if (!panel) return;
+        const editor = document.getElementById('editor-panel');
+        if (!panel || !editor) return;
+        editor.classList.add('dashboard-nav-ready');
         const opening = !panel.classList.contains('is-open');
+        // Sembunyikan konten halaman lain saat membuka menu cetak.
+        Array.from(editor.children).forEach(el => el.classList.remove('nav-visible'));
         panel.classList.toggle('is-open', opening);
-        document.querySelectorAll('.side-link').forEach(function(x){x.classList.remove('active');});
+        if (opening) panel.classList.add('nav-visible');
+        else panel.classList.remove('nav-visible');
+        document.querySelectorAll('.side-link').forEach(x => x.classList.remove('active'));
         if (opening && btn) btn.classList.add('active');
     }
 
     // ===== DASHBOARD UI =====
     function dashGo(id, btn) {
-        const el = document.getElementById(id);
-        if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
-        document.querySelectorAll('.side-link').forEach(function(x){x.classList.remove('active');});
-        if (btn) btn.classList.add('active');
+        showDashboardSection(id, btn);
     }
     async function logoutApp() {
         if (!confirm('Keluar dari akun sekolah ini? Data sudah/akan disinkronkan ke Firebase saat koneksi tersedia.')) return;
