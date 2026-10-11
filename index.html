@@ -547,6 +547,29 @@ body{background:var(--bg)!important;color:var(--text);}
 #cloud-sync-status[data-state="error"] .cloud-dot{background:#ff6262}
 #cloud-sync-status small{display:block;opacity:.82;margin-top:2px}
 
+
+/* RINCIAN BELANJA: kontrol pilih/hapus dan kolom responsif agar tidak saling menutupi */
+.belanja-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 10px;align-items:center}
+.belanja-list-wrap{width:100%;max-width:100%;overflow-x:auto;overflow-y:visible;padding:2px 1px 6px}
+.belanja-header-row,.belanja-row{
+  display:grid!important;
+  grid-template-columns:26px minmax(105px,1.55fr) minmax(115px,1.45fr) minmax(82px,.95fr) minmax(62px,.62fr) minmax(62px,.62fr) 32px!important;
+  gap:4px!important;align-items:center;width:100%;min-width:0
+}
+.belanja-header-row{font-size:7.5pt;color:#71849a;padding:0 5px;margin:0 0 4px;font-weight:700}
+.belanja-header-row>div{min-width:0;overflow-wrap:anywhere}
+.belanja-header-row .pajak-heading{color:#b77900}
+.belanja-row{padding:6px!important;margin:0 0 6px!important;border-radius:8px!important}
+.belanja-row>*{min-width:0!important;width:100%;max-width:100%}
+.belanja-row input[type="checkbox"]{width:17px!important;height:17px!important;justify-self:center}
+.belanja-row input[type="number"]{padding:5px 3px!important;font-size:9px!important}
+.belanja-row input[type="text"], .belanja-row select{font-size:9px!important}
+.belanja-row button{width:28px!important;justify-self:center}
+@media(max-width:760px){
+ .belanja-header-row,.belanja-row{grid-template-columns:24px minmax(100px,1.4fr) minmax(105px,1.3fr) minmax(75px,.9fr) minmax(58px,.6fr) minmax(58px,.6fr) 30px!important;min-width:550px}
+ .belanja-toolbar .btn{font-size:9px}
+}
+
 </style>
 <base target="_blank">
 </head>
@@ -722,10 +745,17 @@ body{background:var(--bg)!important;color:var(--text);}
         <div style="font-size:8pt; color:#bdc3c7; margin-bottom:6px;">
             Kolom: Nama | Rekening | Bruto | PPN | PPH | Hapus. Data tersimpan otomatis per periode aktif.
         </div>
-        <div style="display:grid; grid-template-columns:30px 2fr 2fr 1fr 1fr 1.5fr 40px; gap:5px; font-size:7pt; color:#95a5a6; padding:0 8px; margin-bottom:2px;">
-            <div></div><div>Nama Belanja</div><div>Rekening</div><div>Bruto (Rp)</div><div style="color:#f1c40f;">PPN (Rp)</div><div style="color:#f1c40f;">PPH (Rp)</div><div></div>
+        <div class="belanja-toolbar">
+            <button type="button" class="btn btn-green btn-small" onclick="ceklisSemuaBelanja()">☑ Ceklis Semua</button>
+            <button type="button" class="btn btn-small" style="background:#7f8c8d;color:white;" onclick="hapusSemuaCeklisBelanja()">☐ Hapus Semua Ceklis</button>
+            <button type="button" class="btn btn-red btn-small" onclick="hapusBelanjaTercentang()">🗑 Hapus Item yang Diceklis</button>
         </div>
-        <div id="belanja-inputs"></div>
+        <div class="belanja-list-wrap">
+            <div class="belanja-header-row">
+                <div></div><div>Nama Belanja</div><div>Rekening</div><div>Bruto (Rp)</div><div class="pajak-heading">PPN (Rp)</div><div class="pajak-heading">PPH (Rp)</div><div></div>
+            </div>
+            <div id="belanja-inputs"></div>
+        </div>
         <button class="btn btn-purple" onclick="addManualRow()" style="margin-top:6px;">+ Tambah Item Manual</button>
         <div style="font-size:8pt; color:#95a5a6; margin-top:4px;">
             Setiap bulan menyimpan datanya sendiri. Hasil paste otomatis masuk ke bulan yang sedang aktif — klik bulan lain untuk melihat data bulan tersebut (kosong jika belum pernah diisi).
@@ -2533,6 +2563,50 @@ body{background:var(--bg)!important;color:var(--text);}
         updatePeriodIndicator();
         showStatus('💾 Belanja periode ' + period + ' tersimpan. Kolom paste dikosongkan.', false);
         updateSurat();
+    }
+
+    // Ceklis semua item tanpa menghapus rincian belanja.
+    function ceklisSemuaBelanja() {
+        if (!belanjaItems.length) {
+            showStatus('Belum ada rincian belanja untuk diceklis.', true);
+            return;
+        }
+        belanjaItems.forEach(item => { item.checked = true; });
+        isDirty = true;
+        saveBelanjaLocal();
+        renderEditorRows();
+        updateSurat();
+        showStatus('Semua ' + belanjaItems.length + ' item rincian belanja berhasil diceklis.', false);
+    }
+
+    // Hapus semua tanda ceklis saja; rincian belanja tetap tersimpan.
+    function hapusSemuaCeklisBelanja() {
+        if (!belanjaItems.length) {
+            showStatus('Belum ada rincian belanja.', true);
+            return;
+        }
+        belanjaItems.forEach(item => { item.checked = false; });
+        isDirty = true;
+        saveBelanjaLocal();
+        renderEditorRows();
+        updateSurat();
+        showStatus('Semua tanda ceklis dihapus. Data rincian belanja tetap ada.', false);
+    }
+
+    function hapusBelanjaTercentang() {
+        const jumlahDipilih = belanjaItems.filter(item => item.checked).length;
+        if (!jumlahDipilih) {
+            showStatus('Ceklis terlebih dahulu item yang ingin dihapus.', true);
+            return;
+        }
+        if (!confirm(`Hapus ${jumlahDipilih} item rincian belanja yang diceklis? Item yang tidak diceklis tetap ada.`)) return;
+        belanjaItems = belanjaItems.filter(item => !item.checked);
+        nextId = Math.max(0, ...belanjaItems.map(item => Number(item.id) || 0)) + 1;
+        isDirty = true;
+        saveBelanjaLocal();
+        renderEditorRows();
+        updateSurat();
+        showStatus(`${jumlahDipilih} item yang diceklis berhasil dihapus.`, false);
     }
 
     function toggleRow(id, checked) {
