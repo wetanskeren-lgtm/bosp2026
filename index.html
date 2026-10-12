@@ -1941,6 +1941,12 @@ body{background:var(--bg)!important;color:var(--text);}
           if (k && /^si_/.test(k)) legacyKeys.push(k);
         }
         if (lastSchool && lastSchool !== npsn) {
+          // Jangan biarkan data lokal sekolah sebelumnya ikut terbaca oleh akun baru.
+          // Penulisan cloud yang sudah dijadwalkan tetap terikat ke NPSN asalnya.
+          cloudWriteTimers.forEach(timer=>clearTimeout(timer));
+          cloudWriteTimers.clear();
+          cloudPendingKeys.clear();
+          cloudSyncErrors=0;
           legacyKeys.forEach(k=>localStorage.removeItem(k));
         } else if (!lastSchool && legacyKeys.length) {
           const ok = confirm('Browser ini memiliki data lokal lama. Apakah data tersebut memang milik sekolah dengan NPSN '+npsn+'?\n\nPilih OK hanya jika data lama milik sekolah ini. Jika bukan, pilih Batal agar data tidak tercampur.');
@@ -1954,10 +1960,13 @@ body{background:var(--bg)!important;color:var(--text);}
         setCloudStatus('loading','Mengambil data sekolah...','Data akun '+npsn+' sedang dimuat dari Firebase.');
         await loadSchoolCloudData();
         const schoolName=document.getElementById('in_nama_sekolah');
-        if(schoolName && profile.namaSekolah) {
-          if(!localStorage.getItem('si_form_data')) schoolName.value=profile.namaSekolah;
-          updateDashboardSchoolName();
+        // Nama sekolah dari profil registrasi menjadi identitas awal akun jika belum
+        // ada data form milik NPSN ini; data antar-NPSN tidak pernah digabung.
+        if(schoolName && profile.namaSekolah && !localStorage.getItem('si_form_data')) {
+          schoolName.value=profile.namaSekolah;
+          autoSave();
         }
+        updateDashboardSchoolName();
         document.getElementById('login-screen').style.display='none';
         document.getElementById('app-wrapper').style.display='block';
         initApp();
@@ -2225,8 +2234,16 @@ body{background:var(--bg)!important;color:var(--text);}
         data.in_sertakan_checklist = chk ? chk.checked : true;
         const chkPb1 = document.getElementById('in_sertakan_pb1');
         data.in_sertakan_pb1 = chkPb1 ? chkPb1.checked : false;
-        data.rapbs_text = document.getElementById('rapbs_input').value;
+        const rapbs = document.getElementById('rapbs_input');
+        data.rapbs_text = rapbs ? rapbs.value : '';
         localStorage.setItem('si_form_data', JSON.stringify(data));
+
+        // Sinkronkan keluaran dokumen segera setelah kolom diedit.
+        // Sebelumnya autoSave hanya menyimpan input, sehingga Catatan di dokumen
+        // cetak masih memakai teks lama sampai ada perubahan lain.
+        if (typeof updateSurat === 'function') {
+            try { updateSurat(); } catch (err) { console.warn('Pembaruan pratinjau dokumen tertunda:', err); }
+        }
     }
 
     function saveToLocal() {
@@ -3458,6 +3475,8 @@ body{background:var(--bg)!important;color:var(--text);}
     }
 
     function getDocHtml(ids) {
+        // Pastikan semua dokumen hasil salin/print membaca nilai form paling baru.
+        if (typeof updateSurat === 'function') updateSurat();
         ids = ids || getSelectedDocumentIds();
         let html = ids.map(function(id) {
             return cloneDocHtml(id);
