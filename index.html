@@ -559,7 +559,7 @@ body{background:var(--bg)!important;color:var(--text);}
 .belanja-list-wrap{width:100%;max-width:100%;overflow-x:auto;overflow-y:visible;padding:2px 1px 6px}
 .belanja-header-row,.belanja-row{
   display:grid!important;
-  grid-template-columns:24px minmax(105px,1.35fr) minmax(105px,1.25fr) minmax(52px,.55fr) minmax(85px,.9fr) minmax(85px,.9fr) minmax(58px,.6fr) minmax(58px,.6fr) 30px!important;
+  grid-template-columns:24px minmax(105px,1.3fr) minmax(105px,1.15fr) minmax(52px,.5fr) minmax(65px,.6fr) minmax(85px,.85fr) minmax(85px,.85fr) minmax(58px,.55fr) minmax(58px,.55fr) 30px!important;
   gap:4px!important;align-items:center;width:100%;min-width:0
 }
 .belanja-header-row{font-size:7.5pt;color:#71849a;padding:0 5px;margin:0 0 4px;font-weight:700}
@@ -780,7 +780,7 @@ body{background:var(--bg)!important;color:var(--text);}
 
         <div class="form-section-title">4. RINCIAN BELANJA (Ceklis untuk masukkan ke SI)</div>
         <div style="font-size:8pt; color:#bdc3c7; margin-bottom:6px;">
-            Kolom: Nama | Rekening | Volume | Harga Satuan | Total/Bruto | PPN | PPH | Hapus. Total dihitung otomatis dari volume × harga satuan.
+            Kolom: Nama | Rekening | Volume | Satuan (mis. paket, box, pcs) | Harga Satuan | Total/Bruto | PPN | PPH | Hapus. Total dihitung otomatis dari volume × harga satuan.
         </div>
         <div class="belanja-toolbar">
             <button type="button" class="btn btn-green btn-small" onclick="ceklisSemuaBelanja()">☑ Ceklis Semua</button>
@@ -789,7 +789,7 @@ body{background:var(--bg)!important;color:var(--text);}
         </div>
         <div class="belanja-list-wrap">
             <div class="belanja-header-row">
-                <div></div><div>Nama Belanja</div><div>Rekening</div><div>Volume</div><div>Harga Satuan (Rp)</div><div>Total/Bruto (Rp)</div><div class="pajak-heading">PPN (Rp)</div><div class="pajak-heading">PPH (Rp)</div><div></div>
+                <div></div><div>Nama Belanja</div><div>Rekening</div><div>Volume</div><div>Satuan</div><div>Harga Satuan (Rp)</div><div>Total/Bruto (Rp)</div><div class="pajak-heading">PPN (Rp)</div><div class="pajak-heading">PPH (Rp)</div><div></div>
             </div>
             <div id="belanja-inputs"></div>
         </div>
@@ -2580,6 +2580,7 @@ body{background:var(--bg)!important;color:var(--text);}
             item.volume = 1;
             item.hargaSatuan = Number(item.jumlah) || 0;
         }
+        item.satuan = item.satuan || '';
         item.jumlah = (Number(item.volume) || 0) * (Number(item.hargaSatuan) || 0);
         const ppn = item.ppn || 0;
         const pph = item.pph || 0;
@@ -2590,6 +2591,7 @@ body{background:var(--bg)!important;color:var(--text);}
                 ${getRekeningOptions(item.rekId)}
             </select>
             <input type="number" min="0" step="any" value="${Number(item.volume)||0}" onchange="updateRowVolume(${item.id}, this.value)" placeholder="Vol." title="Volume atau jumlah barang">
+            <input type="text" value="${esc(item.satuan || '')}" onchange="updateRowSatuan(${item.id}, this.value)" placeholder="Paket/box" title="Satuan barang, misalnya paket, box, pcs, atau unit">
             <input type="number" min="0" step="any" value="${Number(item.hargaSatuan)||0}" onchange="updateRowHargaSatuan(${item.id}, this.value)" placeholder="Harga satuan" title="Harga per satuan barang (Rp)">
             <input type="number" value="${item.jumlah}" readonly placeholder="Total" title="Total otomatis = volume × harga satuan" style="background:#edf3f8!important;font-weight:bold">
             <input type="number" class="pajak-input" value="${ppn}" onchange="updateRowPpn(${item.id}, this.value)" placeholder="PPN" title="PPN">
@@ -2695,6 +2697,10 @@ body{background:var(--bg)!important;color:var(--text);}
         const item = belanjaItems.find(i => i.id === id);
         if (item) { item.rekId = val; isDirty = true; saveBelanjaLocal(); updateSurat(); }
     }
+    function updateRowSatuan(id, val) {
+        const item = belanjaItems.find(i => i.id === id);
+        if (item) { item.satuan = String(val || '').trim(); isDirty = true; saveBelanjaLocal(); updateSurat(); }
+    }
     function updateRowVolume(id, val) {
         const item = belanjaItems.find(i => i.id === id);
         if (item) {
@@ -2739,7 +2745,7 @@ body{background:var(--bg)!important;color:var(--text);}
         updateSurat();
     }
     function addManualRow() {
-        belanjaItems.push({ id: nextId++, nama: 'Item Baru', volume: 1, hargaSatuan: 0, jumlah: 0, ppn: 0, pph: 0, rekId: "", checked: true, ket: '' });
+        belanjaItems.push({ id: nextId++, nama: 'Item Baru', volume: 1, satuan: '', hargaSatuan: 0, jumlah: 0, ppn: 0, pph: 0, rekId: "", checked: true, ket: '' });
         isDirty = true;
         saveBelanjaLocal();
         renderEditorRows();
