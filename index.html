@@ -559,7 +559,7 @@ body{background:var(--bg)!important;color:var(--text);}
 .belanja-list-wrap{width:100%;max-width:100%;overflow-x:auto;overflow-y:visible;padding:2px 1px 6px}
 .belanja-header-row,.belanja-row{
   display:grid!important;
-  grid-template-columns:26px minmax(105px,1.55fr) minmax(115px,1.45fr) minmax(82px,.95fr) minmax(62px,.62fr) minmax(62px,.62fr) 32px!important;
+  grid-template-columns:24px minmax(105px,1.35fr) minmax(105px,1.25fr) minmax(52px,.55fr) minmax(85px,.9fr) minmax(85px,.9fr) minmax(58px,.6fr) minmax(58px,.6fr) 30px!important;
   gap:4px!important;align-items:center;width:100%;min-width:0
 }
 .belanja-header-row{font-size:7.5pt;color:#71849a;padding:0 5px;margin:0 0 4px;font-weight:700}
@@ -572,7 +572,7 @@ body{background:var(--bg)!important;color:var(--text);}
 .belanja-row input[type="text"], .belanja-row select{font-size:9px!important}
 .belanja-row button{width:28px!important;justify-self:center}
 @media(max-width:760px){
- .belanja-header-row,.belanja-row{grid-template-columns:24px minmax(100px,1.4fr) minmax(105px,1.3fr) minmax(75px,.9fr) minmax(58px,.6fr) minmax(58px,.6fr) 30px!important;min-width:550px}
+ .belanja-header-row,.belanja-row{grid-template-columns:24px minmax(100px,1.3fr) minmax(100px,1.2fr) minmax(52px,.55fr) minmax(82px,.9fr) minmax(82px,.9fr) minmax(58px,.6fr) minmax(58px,.6fr) 30px!important;min-width:760px}
  .belanja-toolbar .btn{font-size:9px}
 }
 
@@ -780,7 +780,7 @@ body{background:var(--bg)!important;color:var(--text);}
 
         <div class="form-section-title">4. RINCIAN BELANJA (Ceklis untuk masukkan ke SI)</div>
         <div style="font-size:8pt; color:#bdc3c7; margin-bottom:6px;">
-            Kolom: Nama | Rekening | Bruto | PPN | PPH | Hapus. Data tersimpan otomatis per periode aktif.
+            Kolom: Nama | Rekening | Volume | Harga Satuan | Total/Bruto | PPN | PPH | Hapus. Total dihitung otomatis dari volume × harga satuan.
         </div>
         <div class="belanja-toolbar">
             <button type="button" class="btn btn-green btn-small" onclick="ceklisSemuaBelanja()">☑ Ceklis Semua</button>
@@ -789,7 +789,7 @@ body{background:var(--bg)!important;color:var(--text);}
         </div>
         <div class="belanja-list-wrap">
             <div class="belanja-header-row">
-                <div></div><div>Nama Belanja</div><div>Rekening</div><div>Bruto (Rp)</div><div class="pajak-heading">PPN (Rp)</div><div class="pajak-heading">PPH (Rp)</div><div></div>
+                <div></div><div>Nama Belanja</div><div>Rekening</div><div>Volume</div><div>Harga Satuan (Rp)</div><div>Total/Bruto (Rp)</div><div class="pajak-heading">PPN (Rp)</div><div class="pajak-heading">PPH (Rp)</div><div></div>
             </div>
             <div id="belanja-inputs"></div>
         </div>
@@ -2575,18 +2575,26 @@ body{background:var(--bg)!important;color:var(--text);}
         const div = document.createElement('div');
         div.className = 'belanja-row';
         div.dataset.id = item.id;
+        // Kompatibilitas data lama: jumlah lama dipertahankan sebagai harga satuan dengan volume 1.
+        if (item.volume == null || item.hargaSatuan == null) {
+            item.volume = 1;
+            item.hargaSatuan = Number(item.jumlah) || 0;
+        }
+        item.jumlah = (Number(item.volume) || 0) * (Number(item.hargaSatuan) || 0);
         const ppn = item.ppn || 0;
         const pph = item.pph || 0;
         div.innerHTML = `
-            <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleRow(${item.id}, this.checked)">
-            <input type="text" value="${esc(item.nama)}" onchange="updateRowName(${item.id}, this.value)" placeholder="Nama Belanja">
-            <select class="belanja-rek-select" data-row-id="${item.id}" onchange="updateRowRekId(${item.id}, this.value)">
+            <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleRow(${item.id}, this.checked)" aria-label="Pilih item">
+            <input type="text" value="${esc(item.nama)}" onchange="updateRowName(${item.id}, this.value)" placeholder="Nama Belanja" aria-label="Nama belanja">
+            <select class="belanja-rek-select" data-row-id="${item.id}" onchange="updateRowRekId(${item.id}, this.value)" aria-label="Rekening">
                 ${getRekeningOptions(item.rekId)}
             </select>
-            <input type="number" value="${item.jumlah}" onchange="updateRowAmount(${item.id}, this.value)" placeholder="Bruto" title="Jumlah Bruto">
+            <input type="number" min="0" step="any" value="${Number(item.volume)||0}" onchange="updateRowVolume(${item.id}, this.value)" placeholder="Vol." title="Volume atau jumlah barang">
+            <input type="number" min="0" step="any" value="${Number(item.hargaSatuan)||0}" onchange="updateRowHargaSatuan(${item.id}, this.value)" placeholder="Harga satuan" title="Harga per satuan barang (Rp)">
+            <input type="number" value="${item.jumlah}" readonly placeholder="Total" title="Total otomatis = volume × harga satuan" style="background:#edf3f8!important;font-weight:bold">
             <input type="number" class="pajak-input" value="${ppn}" onchange="updateRowPpn(${item.id}, this.value)" placeholder="PPN" title="PPN">
             <input type="number" class="pajak-input" value="${pph}" onchange="updateRowPph(${item.id}, this.value)" placeholder="PPH" title="PPH">
-            <button onclick="removeRow(${item.id})" style="background:#e74c3c; color:white; border:none; height:25px; border-radius:3px; cursor:pointer; font-size:11px;">X</button>
+            <button onclick="removeRow(${item.id})" aria-label="Hapus item" style="background:#e74c3c; color:white; border:none; height:25px; border-radius:3px; cursor:pointer; font-size:11px;">X</button>
         `;
         return div;
     }
@@ -2687,9 +2695,33 @@ body{background:var(--bg)!important;color:var(--text);}
         const item = belanjaItems.find(i => i.id === id);
         if (item) { item.rekId = val; isDirty = true; saveBelanjaLocal(); updateSurat(); }
     }
+    function updateRowVolume(id, val) {
+        const item = belanjaItems.find(i => i.id === id);
+        if (item) {
+            if (item.hargaSatuan == null) item.hargaSatuan = Number(item.jumlah) || 0;
+            item.volume = Math.max(0, Number(val) || 0);
+            item.jumlah = item.volume * (Number(item.hargaSatuan) || 0);
+            isDirty = true; saveBelanjaLocal(); renderEditorRows(); updateSurat();
+        }
+    }
+    function updateRowHargaSatuan(id, val) {
+        const item = belanjaItems.find(i => i.id === id);
+        if (item) {
+            if (item.volume == null) item.volume = 1;
+            item.hargaSatuan = Math.max(0, Number(val) || 0);
+            item.jumlah = (Number(item.volume) || 0) * item.hargaSatuan;
+            isDirty = true; saveBelanjaLocal(); renderEditorRows(); updateSurat();
+        }
+    }
+    // Kompatibilitas pemanggilan lama: nilai bruto dianggap harga satuan untuk volume 1.
     function updateRowAmount(id, val) {
         const item = belanjaItems.find(i => i.id === id);
-        if (item) { item.jumlah = parseInt(val) || 0; isDirty = true; saveBelanjaLocal(); updateTotals(); updateSurat(); }
+        if (item) {
+            item.volume = 1;
+            item.hargaSatuan = Math.max(0, Number(val) || 0);
+            item.jumlah = item.hargaSatuan;
+            isDirty = true; saveBelanjaLocal(); renderEditorRows(); updateSurat();
+        }
     }
     function updateRowPpn(id, val) {
         const item = belanjaItems.find(i => i.id === id);
@@ -2707,7 +2739,7 @@ body{background:var(--bg)!important;color:var(--text);}
         updateSurat();
     }
     function addManualRow() {
-        belanjaItems.push({ id: nextId++, nama: 'Item Baru', jumlah: 0, ppn: 0, pph: 0, rekId: "", checked: true, ket: '' });
+        belanjaItems.push({ id: nextId++, nama: 'Item Baru', volume: 1, hargaSatuan: 0, jumlah: 0, ppn: 0, pph: 0, rekId: "", checked: true, ket: '' });
         isDirty = true;
         saveBelanjaLocal();
         renderEditorRows();
@@ -2739,16 +2771,16 @@ body{background:var(--bg)!important;color:var(--text);}
                 if (match) {
                     const name = line.substring(0, line.lastIndexOf(match[1])).trim();
                     const amount = parseInt(match[1].replace(/[.,]/g, '')) || 0;
-                    if (name && amount > 0) newItems.push({ nama: name, jumlah: amount, ket: name });
+                    if (name && amount > 0) newItems.push({ nama: name, volume: 1, hargaSatuan: amount, jumlah: amount, ket: name });
                 }
             } else {
                 const name = parts[0].trim();
                 const amount = parseInt(parts[parts.length-1].replace(/[^\d]/g, '')) || 0;
-                if (name && amount > 0) newItems.push({ nama: name, jumlah: amount, ket: name });
+                if (name && amount > 0) newItems.push({ nama: name, volume: 1, hargaSatuan: amount, jumlah: amount, ket: name });
             }
         });
         // Hasil paste langsung mengganti rincian belanja bulan aktif & tersimpan otomatis
-        belanjaItems = newItems.map(d => ({ id: nextId++, nama: d.nama, jumlah: d.jumlah, ppn: 0, pph: 0, rekId: 1, checked: true, ket: d.ket }));
+        belanjaItems = newItems.map(d => ({ id: nextId++, nama: d.nama, volume: d.volume || 1, hargaSatuan: d.hargaSatuan ?? d.jumlah, jumlah: d.jumlah, ppn: 0, pph: 0, rekId: 1, checked: true, ket: d.ket }));
         isDirty = true;
         saveBelanjaLocal();
         renderEditorRows();
@@ -3054,13 +3086,13 @@ body{background:var(--bg)!important;color:var(--text);}
             const div = document.createElement('div');
             div.className = 'rekening-row manmin-row';
             div.style.gridTemplateColumns = '45px minmax(120px,1.7fr) 65px minmax(100px,1fr) minmax(105px,1fr) minmax(120px,1.4fr) minmax(100px,1.2fr) 32px';
-            div.innerHTML = '<input type="text" value="' + esc(p.nomor || (i + 1)) + '" onchange="updPenerimaManmin(' + i + ','nomor',this.value)" placeholder="No." aria-label="Nomor">' +
-                '<input type="text" value="' + esc(p.nama) + '" onchange="updPenerimaManmin(' + i + ','nama',this.value)" placeholder="Nama penerima" aria-label="Nama penerima">' +
-                '<input type="number" min="0" step="1" value="' + jumlah + '" onchange="updPenerimaManmin(' + i + ','jumlah',this.value)" placeholder="Jumlah" aria-label="Jumlah">' +
-                '<input type="number" min="0" step="any" value="' + hargaSatuan + '" onchange="updPenerimaManmin(' + i + ','hargaSatuan',this.value)" placeholder="Harga satuan" aria-label="Harga satuan (Rp)">' +
+            div.innerHTML = '<input type="text" value="' + esc(p.nomor || (i + 1)) + '" onchange="updPenerimaManmin(' + i + ',\'nomor\',this.value)" placeholder="No." aria-label="Nomor">' +
+                '<input type="text" value="' + esc(p.nama) + '" onchange="updPenerimaManmin(' + i + ',\'nama\',this.value)" placeholder="Nama penerima" aria-label="Nama penerima">' +
+                '<input type="number" min="0" step="1" value="' + jumlah + '" onchange="updPenerimaManmin(' + i + ',\'jumlah\',this.value)" placeholder="Jumlah" aria-label="Jumlah">' +
+                '<input type="number" min="0" step="any" value="' + hargaSatuan + '" onchange="updPenerimaManmin(' + i + ',\'hargaSatuan\',this.value)" placeholder="Harga satuan" aria-label="Harga satuan (Rp)">' +
                 '<input type="text" readonly value="' + fmtNumber(p.totalHarga) + '" aria-label="Total harga (Rp)" title="Jumlah dikali harga satuan" style="font-weight:700;background:#eaf5ff!important;">' +
-                '<input type="text" value="' + esc(p.tandaTangan) + '" onchange="updPenerimaManmin(' + i + ','tandaTangan',this.value)" placeholder="Nama/ruang tanda tangan" aria-label="Tanda tangan">' +
-                '<input type="text" value="' + esc(p.keterangan) + '" onchange="updPenerimaManmin(' + i + ','keterangan',this.value)" placeholder="Keterangan" aria-label="Keterangan">' +
+                '<input type="text" value="' + esc(p.tandaTangan) + '" onchange="updPenerimaManmin(' + i + ',\'tandaTangan\',this.value)" placeholder="Nama/ruang tanda tangan" aria-label="Tanda tangan">' +
+                '<input type="text" value="' + esc(p.keterangan) + '" onchange="updPenerimaManmin(' + i + ',\'keterangan\',this.value)" placeholder="Keterangan" aria-label="Keterangan">' +
                 '<button type="button" onclick="delPenerimaManmin(' + i + ')" style="background:#e74c3c;color:#fff;border:none;height:25px;border-radius:3px;cursor:pointer;">X</button>';
             c.appendChild(div);
         });
