@@ -3397,74 +3397,7 @@ body{background:var(--bg)!important;color:var(--text);}
         w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Cetak Dokumen</title><style>' + css +
             ' body { background:#fff; } .container { margin:0 auto; padding:0; width:100%; max-width:190mm; box-shadow:none; } @page { size:portrait; margin:1.5cm; } .no-print { display:none !important; } @media print { body, body *:not(img):not(svg):not(svg *) { color:#000 !important; -webkit-text-fill-color:#000 !important; background-color:#fff !important; background-image:none !important; text-shadow:none !important; box-shadow:none !important; } table,thead,tbody,tfoot,tr,th,td { border-color:#000 !important; } img { print-color-adjust:exact !important; -webkit-print-color-adjust:exact !important; } }</style></head><body>');
         w.document.write(cloneDocHtml(id));
-        w.document.write('<scr' + 'ipt>window.onload = function(){ setTimeout(function(){ window.print(); }, 400); };</scr' + 'ipt>
-<style id="print-selector-recovery-style">
-/* Pemulihan panel Cetak Dokumen Terpilih */
-.print-selector.is-open {
-  display:flex !important;
-  flex-direction:column !important;
-  position:fixed !important;
-  top:84px !important;
-  right:18px !important;
-  width:min(390px, calc(100vw - 36px)) !important;
-  max-height:calc(100vh - 100px) !important;
-  overflow:hidden !important;
-  z-index:99999 !important;
-  visibility:visible !important;
-  opacity:1 !important;
-}
-.print-selector.is-open .print-doc-list {
-  display:flex !important;
-  flex-direction:column !important;
-  overflow-y:auto !important;
-  min-height:80px !important;
-  max-height:calc(100vh - 330px) !important;
-  visibility:visible !important;
-}
-@media(max-width:760px) {
-  .print-selector.is-open {
-    top:70px !important; right:8px !important;
-    width:calc(100vw - 86px) !important;
-    max-height:calc(100vh - 80px) !important;
-  }
-}
-</style>
-<script id="print-selector-recovery">
-(function(){
-  function recoverPrintPanel(){
-    const panel=document.querySelector('.print-selector');
-    const list=document.getElementById('print-doc-list');
-    if(!panel) return;
-    if(list && !list.querySelector('.print-doc-check') && typeof renderPrintDocumentSelector==='function'){
-      renderPrintDocumentSelector();
-    }
-  }
-  // Ganti fungsi toggle agar panel selalu terbuka/tertutup dengan benar dan daftar dimuat saat dibuka.
-  window.togglePrintSelector=function(btn){
-    const panel=document.querySelector('.print-selector');
-    if(!panel) { console.error('Panel Cetak Dokumen Terpilih tidak ditemukan.'); return; }
-    const opening=!panel.classList.contains('is-open');
-    if(opening) recoverPrintPanel();
-    panel.classList.toggle('is-open',opening);
-    panel.style.display=opening?'flex':'none';
-    document.querySelectorAll('.side-link').forEach(function(x){x.classList.remove('active');});
-    const trigger=btn || document.getElementById('side-print-toggle');
-    if(opening && trigger) trigger.classList.add('active');
-    if(opening) {
-      panel.setAttribute('aria-hidden','false');
-      const list=document.getElementById('print-doc-list');
-      if(list) list.style.visibility='visible';
-    } else {
-      panel.setAttribute('aria-hidden','true');
-    }
-  };
-  document.addEventListener('DOMContentLoaded',recoverPrintPanel);
-  // In case the app is already loaded when this repair script runs.
-  if(document.readyState!=='loading') recoverPrintPanel();
-})();
-</script>
-
-</body></html>');
+        w.document.write('<scr' + 'ipt>window.onload = function(){ setTimeout(function(){ window.print(); }, 400); };</scr' + 'ipt></body></html>');
         w.document.close();
     }
 
@@ -3718,74 +3651,7 @@ body{background:var(--bg)!important;color:var(--text);}
         w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Cetak Dokumen Terpilih</title><style>' + css +
             ' body { background:#fff; } .container { margin:0 auto; padding:0; width:100%; max-width:190mm; box-shadow:none; } @page { size:portrait; margin:1.5cm; } .no-print { display:none !important; } @media print { body, body *:not(img):not(svg):not(svg *) { color:#000 !important; -webkit-text-fill-color:#000 !important; background-color:#fff !important; background-image:none !important; text-shadow:none !important; box-shadow:none !important; } table,thead,tbody,tfoot,tr,th,td { border-color:#000 !important; } img { print-color-adjust:exact !important; -webkit-print-color-adjust:exact !important; } }</style></head><body>');
         w.document.write(getDocHtml(ids));
-        w.document.write('<scr' + 'ipt>window.onload = function(){ setTimeout(function(){ window.print(); }, 400); };</scr' + 'ipt>
-<style id="print-selector-recovery-style">
-/* Pemulihan panel Cetak Dokumen Terpilih */
-.print-selector.is-open {
-  display:flex !important;
-  flex-direction:column !important;
-  position:fixed !important;
-  top:84px !important;
-  right:18px !important;
-  width:min(390px, calc(100vw - 36px)) !important;
-  max-height:calc(100vh - 100px) !important;
-  overflow:hidden !important;
-  z-index:99999 !important;
-  visibility:visible !important;
-  opacity:1 !important;
-}
-.print-selector.is-open .print-doc-list {
-  display:flex !important;
-  flex-direction:column !important;
-  overflow-y:auto !important;
-  min-height:80px !important;
-  max-height:calc(100vh - 330px) !important;
-  visibility:visible !important;
-}
-@media(max-width:760px) {
-  .print-selector.is-open {
-    top:70px !important; right:8px !important;
-    width:calc(100vw - 86px) !important;
-    max-height:calc(100vh - 80px) !important;
-  }
-}
-</style>
-<script id="print-selector-recovery">
-(function(){
-  function recoverPrintPanel(){
-    const panel=document.querySelector('.print-selector');
-    const list=document.getElementById('print-doc-list');
-    if(!panel) return;
-    if(list && !list.querySelector('.print-doc-check') && typeof renderPrintDocumentSelector==='function'){
-      renderPrintDocumentSelector();
-    }
-  }
-  // Ganti fungsi toggle agar panel selalu terbuka/tertutup dengan benar dan daftar dimuat saat dibuka.
-  window.togglePrintSelector=function(btn){
-    const panel=document.querySelector('.print-selector');
-    if(!panel) { console.error('Panel Cetak Dokumen Terpilih tidak ditemukan.'); return; }
-    const opening=!panel.classList.contains('is-open');
-    if(opening) recoverPrintPanel();
-    panel.classList.toggle('is-open',opening);
-    panel.style.display=opening?'flex':'none';
-    document.querySelectorAll('.side-link').forEach(function(x){x.classList.remove('active');});
-    const trigger=btn || document.getElementById('side-print-toggle');
-    if(opening && trigger) trigger.classList.add('active');
-    if(opening) {
-      panel.setAttribute('aria-hidden','false');
-      const list=document.getElementById('print-doc-list');
-      if(list) list.style.visibility='visible';
-    } else {
-      panel.setAttribute('aria-hidden','true');
-    }
-  };
-  document.addEventListener('DOMContentLoaded',recoverPrintPanel);
-  // In case the app is already loaded when this repair script runs.
-  if(document.readyState!=='loading') recoverPrintPanel();
-})();
-</script>
-
-</body></html>');
+        w.document.write('<scr' + 'ipt>window.onload = function(){ setTimeout(function(){ window.print(); }, 400); };</scr' + 'ipt></body></html>');
         w.document.close();
 
         showStatus('🖨️ Membuka ' + ids.length + ' dokumen terpilih untuk dicetak...', false);
@@ -3861,7 +3727,6 @@ body{background:var(--bg)!important;color:var(--text);}
     }
 </script>
 
-
 <style id="print-selector-recovery-style">
 /* Pemulihan panel Cetak Dokumen Terpilih */
 .print-selector.is-open {
@@ -3927,6 +3792,5 @@ body{background:var(--bg)!important;color:var(--text);}
   if(document.readyState!=='loading') recoverPrintPanel();
 })();
 </script>
-
 </body>
 </html>
