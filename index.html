@@ -2908,7 +2908,11 @@ body{background:var(--bg)!important;color:var(--text);}
         const hari = gv('in_hari');
         const tglTerima = gv('in_tgl_terima');
         const items = belanjaItems.filter(i => i.checked);
-        const total = items.reduce((a, b) => a + b.jumlah, 0);
+        const total = items.reduce((a, b) => a + (Number(b.volume ?? 1) * Number(b.hargaSatuan ?? b.jumlah)), 0);
+        const vol = it => Number(it.volume ?? 1);
+        const satuan = it => esc(it.satuan || '');
+        const harga = it => Number(it.hargaSatuan ?? it.jumlah);
+        const bruto = it => vol(it) * harga(it);
         const terbilang = gv('in_terbilang') || angkaKeTerbilang(total);
         const noSp = gv('in_no_po');
         const noInv = gv('in_no_invoice');
@@ -2946,8 +2950,8 @@ body{background:var(--bg)!important;color:var(--text);}
         // ============ 2. DOKUMEN HASIL PEMBANDINGAN ============
         let bandingHtml = '';
         items.forEach(it => {
-            const hargaI = Math.round(it.jumlah * 1.06 / 100) * 100;   // Produk I (lebih mahal)
-            const hargaII = it.jumlah;                                  // Produk II (dipilih)
+            const hargaI = Math.round(harga(it) * 1.06 / 100) * 100;   // Produk I (lebih mahal)
+            const hargaII = harga(it);                                  // Produk II (dipilih)
             bandingHtml += '<table class="data-table" style="margin-bottom:14px; font-size:9pt;">' +
                 '<thead><tr><th width="170">Uraian</th><th>Produk I</th><th>Produk II</th><th width="70">Ket</th></tr></thead><tbody>' +
                 '<tr><td style="text-align:left">Nama Calon Penyedia</td><td>' + esc(v2) + '</td><td><b>' + esc(dipilih) + '</b></td><td></td></tr>' +
@@ -2965,10 +2969,10 @@ body{background:var(--bg)!important;color:var(--text);}
         // ============ 3. DOKUMEN HASIL NEGOSIASI ============
         let neg = '', totNeg = 0, totNegAwal = 0;
         items.forEach((it, idx) => {
-            const hawal = Math.round(it.jumlah * 1.1 / 100) * 100;
-            totNegAwal += hawal; totNeg += it.jumlah;
+            const hawal = Math.round(harga(it) * 1.1 / 100) * 100;
+            totNegAwal += hawal * vol(it); totNeg += bruto(it);
             neg += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td>1</td>' +
-                '<td>' + fmtNumber(hawal) + ',-</td><td>' + fmtNumber(it.jumlah) + ',-</td><td style="text-align:left">Disepakati</td></tr>';
+                '<td>' + fmtNumber(hawal) + ',-</td><td>' + fmtNumber(harga(it)) + ',-</td><td style="text-align:left">Disepakati</td></tr>';
         });
         setBody('out_tabel_negosiasi', neg, 6);
         set('total_neg_awal', fmtNumber(totNegAwal) + ',-');
@@ -2983,8 +2987,8 @@ body{background:var(--bg)!important;color:var(--text);}
         set('spj_ttd_pihak2', dipilih); set('spj_tgl_selesai', tglTerima);
         let spj = '';
         items.forEach((it, idx) => {
-            spj += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td>1</td><td>Paket</td>' +
-                '<td>' + fmtNumber(it.jumlah) + ',-</td><td>' + fmtNumber(it.jumlah) + ',-</td></tr>';
+            spj += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td>' + fmtNumber(vol(it)) + '</td><td>' + satuan(it) + '</td>' +
+                '<td>' + fmtNumber(harga(it)) + ',-</td><td>' + fmtNumber(bruto(it)) + ',-</td></tr>';
         });
         setBody('out_tabel_spj', spj, 6);
         set('total_spj', fmtNumber(total) + ',-'); set('terbilang_spj', terbilang);
@@ -2995,8 +2999,8 @@ body{background:var(--bg)!important;color:var(--text);}
         set('sp_tgl_terima', tglTerima); set('out_tgl_sp', tgl);
         let sp = '';
         items.forEach((it, idx) => {
-            sp += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td>1</td><td>Paket</td>' +
-                '<td>' + fmtNumber(it.jumlah) + ',-</td><td>' + fmtNumber(it.jumlah) + ',-</td></tr>';
+            sp += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td>' + fmtNumber(vol(it)) + '</td><td>' + satuan(it) + '</td>' +
+                '<td>' + fmtNumber(harga(it)) + ',-</td><td>' + fmtNumber(bruto(it)) + ',-</td></tr>';
         });
         setBody('out_tabel_sp', sp, 6);
         set('total_sp', fmtNumber(total) + ',-'); set('total_sp_all', fmtNumber(total) + ',-'); set('terbilang_sp', terbilang);
@@ -3007,8 +3011,8 @@ body{background:var(--bg)!important;color:var(--text);}
         set('spk_waktu', tgl); set('spk_selesai', tglTerima); set('spk_ttd', dipilih);
         let spk = '';
         items.forEach((it, idx) => {
-            spk += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td style="text-align:left">1 Paket</td>' +
-                '<td>' + fmtNumber(it.jumlah) + ',-</td><td>' + fmtNumber(it.jumlah) + ',-</td></tr>';
+            spk += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td style="text-align:left">' + fmtNumber(vol(it)) + ' ' + satuan(it) + '</td>' +
+                '<td>' + fmtNumber(harga(it)) + ',-</td><td>' + fmtNumber(bruto(it)) + ',-</td></tr>';
         });
         setBody('out_tabel_spk', spk, 5);
         set('total_spk', fmtNumber(total) + ',-'); set('terbilang_spk', terbilang);
@@ -3020,7 +3024,7 @@ body{background:var(--bg)!important;color:var(--text);}
         set('shp_telp', gv('in_telp_sekolah')); set('shp_ttd_penyedia', dipilih);
         let shp = '';
         items.forEach((it, idx) => {
-            shp += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td>1 Paket</td>' +
+            shp += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td>' + fmtNumber(vol(it)) + ' ' + satuan(it) + '</td>' +
                 '<td>Sesuai</td><td>Baik</td></tr>';
         });
         setBody('out_tabel_shp', shp, 5);
@@ -3033,8 +3037,8 @@ body{background:var(--bg)!important;color:var(--text);}
         set('ba_no_sp', noSp); set('ba_tgl_sp', tgl); set('ba_mulai', tgl); set('ba_sampai', tglTerima);
         let ba = '';
         items.forEach(it => {
-            ba += '<tr><td style="text-align:left">' + esc(it.nama) + '</td><td>1</td><td>Paket</td>' +
-                '<td>' + fmtNumber(it.jumlah) + ',-</td><td>' + fmtNumber(it.jumlah) + ',-</td><td>Sesuai</td></tr>';
+            ba += '<tr><td style="text-align:left">' + esc(it.nama) + '</td><td>' + fmtNumber(vol(it)) + '</td><td>' + satuan(it) + '</td>' +
+                '<td>' + fmtNumber(harga(it)) + ',-</td><td>' + fmtNumber(bruto(it)) + ',-</td><td>Sesuai</td></tr>';
         });
         setBody('out_tabel_ba', ba, 6);
         set('total_ba', fmtNumber(total) + ',-');
@@ -3305,7 +3309,7 @@ body{background:var(--bg)!important;color:var(--text);}
         set('bast_ttd_pihak2', pNama);
         let bH = '';
         items.forEach(function(it, idx) {
-            bH += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td>1</td><td>Paket</td><td>' + fmtNumber(it.jumlah) + ',-</td><td>' + fmtNumber(it.jumlah) + ',-</td></tr>';
+            bH += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td>' + fmtNumber(vol(it)) + '</td><td>' + satuan(it) + '</td><td>' + fmtNumber(harga(it)) + ',-</td><td>' + fmtNumber(bruto(it)) + ',-</td></tr>';
         });
         setH('out_tabel_bast', bH || '<tr><td colspan="6" style="color:#999; padding:10px;">Belum ada item terceklis.</td></tr>');
         set('total_bast', fmtNumber(total) + ',-');
@@ -3322,7 +3326,7 @@ body{background:var(--bg)!important;color:var(--text);}
         set('nota_tgl_ttd', tgl);
         let nH = '';
         items.forEach(function(it, idx) {
-            nH += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td>1</td><td>' + fmtNumber(it.jumlah) + ',-</td><td>' + fmtNumber(it.jumlah) + ',-</td></tr>';
+            nH += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td>1</td><td>' + fmtNumber(harga(it)) + ',-</td><td>' + fmtNumber(bruto(it)) + ',-</td></tr>';
         });
         setH('out_tabel_nota', nH || '<tr><td colspan="5" style="color:#999; padding:10px;">Belum ada item terceklis.</td></tr>');
         set('total_nota', fmtNumber(total) + ',-');
