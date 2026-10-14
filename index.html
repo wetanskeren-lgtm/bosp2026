@@ -855,10 +855,12 @@ body{background:var(--bg)!important;color:var(--text);}
 
         <div id="sec-penerima-manmin" class="form-section-title">5C. INPUT PENERIMA MAN/MIN</div>
         <div style="font-size:9pt;color:#71849a;margin-bottom:8px;">Isi daftar penerima. Nomor, nama, nominal, tanda tangan, dan keterangan akan tampil pada dokumen cetak.</div>
-        <div style="display:grid;grid-template-columns:55px 2fr 1fr 1.5fr 1.5fr 40px;gap:5px;font-size:8pt;color:#71849a;padding:0 6px;margin-bottom:4px;">
-            <div>Nomor</div><div>Nama</div><div>Nominal (Rp)</div><div>Tanda Tangan</div><div>Keterangan</div><div></div>
+        <div style="display:grid;grid-template-columns:45px minmax(120px,1.7fr) 65px minmax(100px,1fr) minmax(105px,1fr) minmax(120px,1.4fr) minmax(100px,1.2fr) 32px;gap:5px;font-size:8pt;color:#71849a;padding:0 6px;margin-bottom:4px;">
+            <div>Nomor</div><div>Nama</div><div>Jumlah</div><div>Harga Satuan (Rp)</div><div>Total Harga (Rp)</div><div>Tanda Tangan</div><div>Keterangan</div><div></div>
         </div>
-        <div id="penerima-manmin-inputs"></div>
+        <div style="width:100%;overflow-x:auto;padding:2px 1px 6px;">
+            <div id="penerima-manmin-inputs" style="min-width:900px;"></div>
+        </div>
         <button class="btn btn-green btn-small" onclick="addPenerimaManmin()" style="margin-top:6px;">+ Tambah Penerima MAN/MIN</button>
 
         <div class="form-section-title">6. CATATAN & TERBILANG</div>
@@ -1768,9 +1770,9 @@ body{background:var(--bg)!important;color:var(--text);}
             </div>
         </div>
         <table class="data-table" style="font-size:10pt;margin-top:20px;">
-            <thead><tr><th style="width:55px;">Nomor</th><th>Nama</th><th style="width:130px;">Nominal (Rp)</th><th style="width:150px;">Tanda Tangan</th><th style="width:150px;">Keterangan</th></tr></thead>
+            <thead><tr><th style="width:45px;">Nomor</th><th>Nama</th><th style="width:65px;">Jumlah</th><th style="width:115px;">Harga Satuan (Rp)</th><th style="width:125px;">Total Harga (Rp)</th><th style="width:130px;">Tanda Tangan</th><th style="width:130px;">Keterangan</th></tr></thead>
             <tbody id="out_tabel_penerima_manmin"></tbody>
-            <tfoot><tr><th colspan="2" style="text-align:right;">TOTAL</th><th id="out_total_penerima_manmin"></th><th colspan="2"></th></tr></tfoot>
+            <tfoot><tr><th colspan="4" style="text-align:right;">TOTAL HARGA</th><th id="out_total_penerima_manmin"></th><th colspan="2"></th></tr></tfoot>
         </table>
     </div>
 
@@ -3024,7 +3026,18 @@ body{background:var(--bg)!important;color:var(--text);}
 
     function loadPenerimaManmin() {
         try { penerimaManminList = JSON.parse(localStorage.getItem('si_penerima_manmin') || '[]'); } catch (e) { penerimaManminList = []; }
-        if (!penerimaManminList.length) penerimaManminList.push({ nomor: '1', nama: '', nominal: 0, tandaTangan: '', keterangan: '' });
+        // Migrasi data lama: nominal sebelumnya dianggap sebagai total harga.
+        penerimaManminList = penerimaManminList.map(function(p) {
+            const jumlah = Math.max(0, Number(p.jumlah == null ? 1 : p.jumlah) || 0);
+            const hargaSatuan = Math.max(0, Number(p.hargaSatuan) || 0);
+            const totalLama = Math.max(0, Number(p.totalHarga == null ? p.nominal : p.totalHarga) || 0);
+            return { nomor: p.nomor || '', nama: p.nama || '', jumlah: jumlah,
+                hargaSatuan: hargaSatuan || (jumlah ? Math.round(totalLama / jumlah) : 0),
+                totalHarga: hargaSatuan ? jumlah * hargaSatuan : totalLama,
+                tandaTangan: p.tandaTangan || '', keterangan: p.keterangan || '' };
+        });
+        if (!penerimaManminList.length) penerimaManminList.push({ nomor: '1', nama: '', jumlah: 1, hargaSatuan: 0, totalHarga: 0, tandaTangan: '', keterangan: '' });
+        savePenerimaManmin();
         renderPenerimaManminRows();
     }
     function savePenerimaManmin() {
@@ -3035,30 +3048,40 @@ body{background:var(--bg)!important;color:var(--text);}
         if (!c) return;
         c.innerHTML = '';
         penerimaManminList.forEach(function(p, i) {
+            const jumlah = Math.max(0, Number(p.jumlah) || 0);
+            const hargaSatuan = Math.max(0, Number(p.hargaSatuan) || 0);
+            p.totalHarga = jumlah * hargaSatuan;
             const div = document.createElement('div');
-            div.className = 'rekening-row';
-            div.style.gridTemplateColumns = '55px 2fr 1fr 1.5fr 1.5fr 40px';
-            div.innerHTML = '<input type="text" value="' + esc(p.nomor || (i + 1)) + '" onchange="updPenerimaManmin(' + i + ',\'nomor\',this.value)" placeholder="Nomor">' +
-                '<input type="text" value="' + esc(p.nama) + '" onchange="updPenerimaManmin(' + i + ',\'nama\',this.value)" placeholder="Nama penerima">' +
-                '<input type="number" min="0" value="' + (Number(p.nominal) || 0) + '" onchange="updPenerimaManmin(' + i + ',\'nominal\',this.value)" placeholder="Nominal">' +
-                '<input type="text" value="' + esc(p.tandaTangan) + '" onchange="updPenerimaManmin(' + i + ',\'tandaTangan\',this.value)" placeholder="Nama/ruang tanda tangan">' +
-                '<input type="text" value="' + esc(p.keterangan) + '" onchange="updPenerimaManmin(' + i + ',\'keterangan\',this.value)" placeholder="Keterangan">' +
+            div.className = 'rekening-row manmin-row';
+            div.style.gridTemplateColumns = '45px minmax(120px,1.7fr) 65px minmax(100px,1fr) minmax(105px,1fr) minmax(120px,1.4fr) minmax(100px,1.2fr) 32px';
+            div.innerHTML = '<input type="text" value="' + esc(p.nomor || (i + 1)) + '" onchange="updPenerimaManmin(' + i + ','nomor',this.value)" placeholder="No." aria-label="Nomor">' +
+                '<input type="text" value="' + esc(p.nama) + '" onchange="updPenerimaManmin(' + i + ','nama',this.value)" placeholder="Nama penerima" aria-label="Nama penerima">' +
+                '<input type="number" min="0" step="1" value="' + jumlah + '" onchange="updPenerimaManmin(' + i + ','jumlah',this.value)" placeholder="Jumlah" aria-label="Jumlah">' +
+                '<input type="number" min="0" step="any" value="' + hargaSatuan + '" onchange="updPenerimaManmin(' + i + ','hargaSatuan',this.value)" placeholder="Harga satuan" aria-label="Harga satuan (Rp)">' +
+                '<input type="text" readonly value="' + fmtNumber(p.totalHarga) + '" aria-label="Total harga (Rp)" title="Jumlah dikali harga satuan" style="font-weight:700;background:#eaf5ff!important;">' +
+                '<input type="text" value="' + esc(p.tandaTangan) + '" onchange="updPenerimaManmin(' + i + ','tandaTangan',this.value)" placeholder="Nama/ruang tanda tangan" aria-label="Tanda tangan">' +
+                '<input type="text" value="' + esc(p.keterangan) + '" onchange="updPenerimaManmin(' + i + ','keterangan',this.value)" placeholder="Keterangan" aria-label="Keterangan">' +
                 '<button type="button" onclick="delPenerimaManmin(' + i + ')" style="background:#e74c3c;color:#fff;border:none;height:25px;border-radius:3px;cursor:pointer;">X</button>';
             c.appendChild(div);
         });
     }
     function updPenerimaManmin(i, f, v) {
-        penerimaManminList[i][f] = f === 'nominal' ? (Number(v) || 0) : v;
+        if (f === 'jumlah' || f === 'hargaSatuan') {
+            penerimaManminList[i][f] = Math.max(0, Number(v) || 0);
+            penerimaManminList[i].totalHarga = (Number(penerimaManminList[i].jumlah) || 0) * (Number(penerimaManminList[i].hargaSatuan) || 0);
+            savePenerimaManmin(); renderPenerimaManminRows(); updateSurat(); return;
+        }
+        penerimaManminList[i][f] = f === 'nomor' ? v : v;
         savePenerimaManmin(); updateSurat();
     }
     function addPenerimaManmin() {
-        penerimaManminList.push({ nomor: String(penerimaManminList.length + 1), nama: '', nominal: 0, tandaTangan: '', keterangan: '' });
+        penerimaManminList.push({ nomor: String(penerimaManminList.length + 1), nama: '', jumlah: 1, hargaSatuan: 0, totalHarga: 0, tandaTangan: '', keterangan: '' });
         savePenerimaManmin(); renderPenerimaManminRows(); updateSurat();
     }
     function delPenerimaManmin(i) {
         penerimaManminList.splice(i, 1);
         penerimaManminList.forEach(function(p, idx) { if (!p.nomor) p.nomor = String(idx + 1); });
-        if (!penerimaManminList.length) penerimaManminList.push({ nomor: '1', nama: '', nominal: 0, tandaTangan: '', keterangan: '' });
+        if (!penerimaManminList.length) penerimaManminList.push({ nomor: '1', nama: '', jumlah: 1, hargaSatuan: 0, totalHarga: 0, tandaTangan: '', keterangan: '' });
         savePenerimaManmin(); renderPenerimaManminRows(); updateSurat();
     }
     function updatePenerimaManminDocument() {
@@ -3066,8 +3089,10 @@ body{background:var(--bg)!important;color:var(--text);}
         if (!tbody) return;
         let total = 0;
         tbody.innerHTML = penerimaManminList.map(function(p, i) {
-            const nominal = Number(p.nominal) || 0; total += nominal;
-            return '<tr><td>' + esc(p.nomor || (i + 1)) + '</td><td style="text-align:left;">' + esc(p.nama) + '</td><td style="text-align:right;">' + fmtNumber(nominal) + '</td><td style="height:48px;">' + esc(p.tandaTangan) + '</td><td style="text-align:left;">' + esc(p.keterangan) + '</td></tr>';
+            const jumlah = Math.max(0, Number(p.jumlah) || 0);
+            const hargaSatuan = Math.max(0, Number(p.hargaSatuan) || 0);
+            const totalHarga = jumlah * hargaSatuan; total += totalHarga;
+            return '<tr><td>' + esc(p.nomor || (i + 1)) + '</td><td style="text-align:left;">' + esc(p.nama) + '</td><td>' + fmtNumber(jumlah) + '</td><td style="text-align:right;">' + fmtNumber(hargaSatuan) + '</td><td style="text-align:right;">' + fmtNumber(totalHarga) + '</td><td style="height:48px;">' + esc(p.tandaTangan) + '</td><td style="text-align:left;">' + esc(p.keterangan) + '</td></tr>';
         }).join('');
         const totalEl = document.getElementById('out_total_penerima_manmin');
         if (totalEl) totalEl.textContent = fmtNumber(total);
