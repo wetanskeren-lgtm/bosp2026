@@ -3708,7 +3708,6 @@ body{background:var(--bg)!important;color:var(--text);}
         // Fallback untuk browser yang tidak memicu onload pada dokumen kosong yang ditulis ulang.
         setTimeout(function() {
             if (w && !w.closed && !w.__printTriggered) {
-                w.__printTriggered = true;
                 triggerPrint();
             }
         }, 1800);
