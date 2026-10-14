@@ -983,6 +983,7 @@ body{background:var(--bg)!important;color:var(--text);}
             <div class="print-doc-list" id="print-doc-list"></div>
             <div class="print-panel-actions">
                 <button type="button" onclick="printSelectedDocuments()" class="panel-print-btn">🖨️ Cetak Dokumen Terpilih</button>
+                <button type="button" onclick="downloadPdf()" class="panel-print-btn" style="background:#176b45;">⬇️ Unduh PDF</button>
             </div>
         </div>
 
@@ -3640,23 +3641,80 @@ body{background:var(--bg)!important;color:var(--text);}
         const ids = validateSelectedDocuments();
         if (!ids) return;
 
-        const css = document.querySelector('style').innerHTML;
+        // Salin semua stylesheet agar dokumen hasil cetak tidak kehilangan format.
+        const styles = Array.from(document.querySelectorAll('style'))
+            .map(function(node) { return node.outerHTML; }).join('\n');
+        const links = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
+            .map(function(node) { return node.outerHTML; }).join('\n');
+
         const w = window.open('', '_blank');
         if (!w) {
             showStatus('Popup diblokir browser. Izinkan popup untuk mencetak.', true);
             return;
         }
 
+        const docsHtml = getDocHtml(ids);
+        const printCss = `
+            html, body { background:#fff !important; color:#000 !important; margin:0; padding:0; }
+            body { display:block !important; }
+            .container { display:block !important; visibility:visible !important; opacity:1 !important;
+                position:relative !important; width:100% !important; max-width:190mm !important;
+                margin:0 auto !important; box-shadow:none !important; }
+            .no-print, button, input, select, textarea, .doc-toolbar { display:none !important; }
+            .container + .container { page-break-before:always !important; break-before:page !important; }
+            @page { size:A4 portrait; margin:12mm; }
+            @media print {
+                html, body { width:100%; height:auto; }
+                body, body *:not(img):not(svg):not(svg *) {
+                    color:#000 !important; -webkit-text-fill-color:#000 !important;
+                    background-image:none !important; text-shadow:none !important; box-shadow:none !important;
+                }
+                .container { page-break-inside:auto; break-inside:auto; }
+                table, thead, tbody, tfoot, tr, th, td { border-color:#000 !important; }
+                img { max-width:100%; -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+            }`;
+
         w.document.open();
-        w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Cetak Dokumen Terpilih</title><style>' + css +
-            ' body { background:#fff; } .container { margin:0 auto; padding:0; width:100%; max-width:190mm; box-shadow:none; } @page { size:portrait; margin:1.5cm; } .no-print { display:none !important; } @media print { body, body *:not(img):not(svg):not(svg *) { color:#000 !important; -webkit-text-fill-color:#000 !important; background-color:#fff !important; background-image:none !important; text-shadow:none !important; box-shadow:none !important; } table,thead,tbody,tfoot,tr,th,td { border-color:#000 !important; } img { print-color-adjust:exact !important; -webkit-print-color-adjust:exact !important; } }</style></head><body>');
-        w.document.write(getDocHtml(ids));
-        w.document.write('<scr' + 'ipt>window.onload = function(){ setTimeout(function(){ window.print(); }, 400); };</scr' + 'ipt></body></html>');
+        w.document.write('<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cetak Dokumen Terpilih</title>');
+        w.document.write(links);
+        w.document.write(styles);
+        w.document.write('<style>' + printCss + '</style></head><body>');
+        w.document.write(docsHtml);
+        w.document.write('</body></html>');
         w.document.close();
 
-        showStatus('🖨️ Membuka ' + ids.length + ' dokumen terpilih untuk dicetak...', false);
+        // Tunggu layout dan gambar selesai dimuat sebelum membuka dialog cetak.
+        const triggerPrint = function() {
+            if (w.__printTriggered) return;
+            w.__printTriggered = true;
+            try {
+                w.focus();
+                w.print();
+                showStatus('🖨️ Dialog cetak dibuka untuk ' + ids.length + ' dokumen. Untuk PDF, pilih "Save as PDF/Simpan sebagai PDF" pada pilihan printer.', false);
+            } catch (err) {
+                showStatus('Gagal membuka dialog cetak: ' + err.message, true);
+            }
+        };
+        w.onload = function() {
+            const imgs = Array.from(w.document.images || []);
+            Promise.all(imgs.map(function(img) {
+                if (img.complete) return Promise.resolve();
+                return new Promise(function(resolve) {
+                    img.onload = resolve;
+                    img.onerror = resolve;
+                });
+            })).then(function() { setTimeout(triggerPrint, 700); });
+        };
+        // Fallback untuk browser yang tidak memicu onload pada dokumen kosong yang ditulis ulang.
+        setTimeout(function() {
+            if (w && !w.closed && !w.__printTriggered) {
+                w.__printTriggered = true;
+                triggerPrint();
+            }
+        }, 1800);
+        // Tandai jika dialog cetak mulai dibuka oleh browser.
+        w.addEventListener('beforeprint', function() { w.__printTriggered = true; }, { once:true });
     }
-
 
     // Panel dokumen terpilih disembunyikan sampai menu sidebar diklik.
     function togglePrintSelector(btn) {
