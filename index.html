@@ -345,6 +345,9 @@ body{background:var(--bg)!important;color:var(--text);}
     font-size:9.5px!important;cursor:pointer;transition:.15s;
 }
 .print-doc-item:hover{background:#f0f7ff!important;border-color:#a9d4f7;}
+#print-doc-list{display:flex!important;flex-direction:column!important;visibility:visible!important;overflow-y:auto!important;min-height:40px!important;flex:1 1 auto!important;}
+#print-doc-list:empty{min-height:40px!important;}
+
 .print-doc-item input{width:17px!important;height:17px!important;accent-color:#1684ef!important;flex:0 0 auto;}
 .print-selected-info{display:none!important;}
 .print-panel-actions{display:grid;grid-template-columns:1fr;gap:7px;margin-top:10px;}
@@ -3531,12 +3534,32 @@ body{background:var(--bg)!important;color:var(--text);}
 
     function renderPrintDocumentSelector() {
         const box = document.getElementById('print-doc-list');
-        if (!box) return;
-        box.innerHTML = PRINT_DOCUMENTS.map(function(d) {
-            return '<label class="print-doc-item">' +
-                '<input type="checkbox" class="print-doc-check" value="' + d[0] + '" onchange="updatePrintSelectionCount()">' +
-                '<span>' + d[1] + '</span></label>';
-        }).join('');
+        if (!box) {
+            console.error('Panel cetak: elemen #print-doc-list tidak ditemukan.');
+            return;
+        }
+        box.replaceChildren();
+        if (!Array.isArray(PRINT_DOCUMENTS) || PRINT_DOCUMENTS.length === 0) {
+            box.innerHTML = '<div style="padding:10px;color:#b42318;background:#fff1f0;border:1px solid #ffccc7;border-radius:8px;">Daftar dokumen belum berhasil dimuat. Tutup panel, muat ulang halaman, lalu coba kembali.</div>';
+            return;
+        }
+        PRINT_DOCUMENTS.forEach(function(d) {
+            const label = document.createElement('label');
+            label.className = 'print-doc-item';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'print-doc-check';
+            checkbox.value = d[0];
+            checkbox.addEventListener('change', updatePrintSelectionCount);
+            const span = document.createElement('span');
+            span.textContent = d[1];
+            label.append(checkbox, span);
+            box.appendChild(label);
+        });
+        box.style.display = 'flex';
+        box.style.flexDirection = 'column';
+        box.style.visibility = 'visible';
+        box.style.minHeight = '40px';
         updatePrintSelectionCount();
     }
 
