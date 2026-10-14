@@ -345,9 +345,6 @@ body{background:var(--bg)!important;color:var(--text);}
     font-size:9.5px!important;cursor:pointer;transition:.15s;
 }
 .print-doc-item:hover{background:#f0f7ff!important;border-color:#a9d4f7;}
-#print-doc-list{display:flex!important;flex-direction:column!important;visibility:visible!important;overflow-y:auto!important;min-height:40px!important;flex:1 1 auto!important;}
-#print-doc-list:empty{min-height:40px!important;}
-
 .print-doc-item input{width:17px!important;height:17px!important;accent-color:#1684ef!important;flex:0 0 auto;}
 .print-selected-info{display:none!important;}
 .print-panel-actions{display:grid;grid-template-columns:1fr;gap:7px;margin-top:10px;}
@@ -367,8 +364,7 @@ body{background:var(--bg)!important;color:var(--text);}
     .modern-action b{font-size:9.5px;line-height:1.12;}
     .modern-action small{font-size:7px;line-height:1.12;}
     #editor-panel{padding-right:20px!important;padding-left:245px!important;}
-    .print-selector{position:fixed!important;right:18px!important;top:88px!important;width:min(352px,calc(100vw - 270px))!important;max-height:calc(100vh - 106px)!important;margin:0!important;z-index:2500!important;}
-    .print-doc-list{max-height:calc(100vh - 355px)!important;} 
+    .print-selector{position:relative;right:auto;top:auto;width:auto;max-height:none;margin:18px 0!important;}
     .print-doc-list{max-height:360px!important;}
 }
 @media (max-width:760px){
@@ -394,8 +390,7 @@ body{background:var(--bg)!important;color:var(--text);}
     .modern-action{width:100%;min-width:0;}
     .modern-action b{font-size:10px;}
     .modern-action small{font-size:7.5px;}
-    .print-selector{position:fixed!important;right:10px!important;top:72px!important;width:calc(100vw - 90px)!important;max-height:calc(100vh - 84px)!important;z-index:2500!important;}
-    .print-doc-list{max-height:calc(100vh - 330px)!important;}
+    .print-selector{width:auto;}
 }
 @media print{
     .dashboard-topbar,.dashboard-sidebar{display:none!important;}
@@ -564,7 +559,7 @@ body{background:var(--bg)!important;color:var(--text);}
 .belanja-list-wrap{width:100%;max-width:100%;overflow-x:auto;overflow-y:visible;padding:2px 1px 6px}
 .belanja-header-row,.belanja-row{
   display:grid!important;
-  grid-template-columns:24px minmax(105px,1.3fr) minmax(105px,1.15fr) minmax(52px,.5fr) minmax(65px,.6fr) minmax(85px,.85fr) minmax(85px,.85fr) minmax(58px,.55fr) minmax(58px,.55fr) 30px!important;
+  grid-template-columns:26px minmax(105px,1.55fr) minmax(115px,1.45fr) minmax(82px,.95fr) minmax(62px,.62fr) minmax(62px,.62fr) 32px!important;
   gap:4px!important;align-items:center;width:100%;min-width:0
 }
 .belanja-header-row{font-size:7.5pt;color:#71849a;padding:0 5px;margin:0 0 4px;font-weight:700}
@@ -577,7 +572,7 @@ body{background:var(--bg)!important;color:var(--text);}
 .belanja-row input[type="text"], .belanja-row select{font-size:9px!important}
 .belanja-row button{width:28px!important;justify-self:center}
 @media(max-width:760px){
- .belanja-header-row,.belanja-row{grid-template-columns:24px minmax(100px,1.3fr) minmax(100px,1.2fr) minmax(52px,.55fr) minmax(82px,.9fr) minmax(82px,.9fr) minmax(58px,.6fr) minmax(58px,.6fr) 30px!important;min-width:760px}
+ .belanja-header-row,.belanja-row{grid-template-columns:24px minmax(100px,1.4fr) minmax(105px,1.3fr) minmax(75px,.9fr) minmax(58px,.6fr) minmax(58px,.6fr) 30px!important;min-width:550px}
  .belanja-toolbar .btn{font-size:9px}
 }
 
@@ -785,7 +780,7 @@ body{background:var(--bg)!important;color:var(--text);}
 
         <div class="form-section-title">4. RINCIAN BELANJA (Ceklis untuk masukkan ke SI)</div>
         <div style="font-size:8pt; color:#bdc3c7; margin-bottom:6px;">
-            Kolom: Nama | Rekening | Volume | Satuan (mis. paket, box, pcs) | Harga Satuan | Total/Bruto | PPN | PPH | Hapus. Total dihitung otomatis dari volume × harga satuan.
+            Kolom: Nama | Rekening | Bruto | PPN | PPH | Hapus. Data tersimpan otomatis per periode aktif.
         </div>
         <div class="belanja-toolbar">
             <button type="button" class="btn btn-green btn-small" onclick="ceklisSemuaBelanja()">☑ Ceklis Semua</button>
@@ -794,7 +789,7 @@ body{background:var(--bg)!important;color:var(--text);}
         </div>
         <div class="belanja-list-wrap">
             <div class="belanja-header-row">
-                <div></div><div>Nama Belanja</div><div>Rekening</div><div>Volume</div><div>Satuan</div><div>Harga Satuan (Rp)</div><div>Total/Bruto (Rp)</div><div class="pajak-heading">PPN (Rp)</div><div class="pajak-heading">PPH (Rp)</div><div></div>
+                <div></div><div>Nama Belanja</div><div>Rekening</div><div>Bruto (Rp)</div><div class="pajak-heading">PPN (Rp)</div><div class="pajak-heading">PPH (Rp)</div><div></div>
             </div>
             <div id="belanja-inputs"></div>
         </div>
@@ -860,12 +855,10 @@ body{background:var(--bg)!important;color:var(--text);}
 
         <div id="sec-penerima-manmin" class="form-section-title">5C. INPUT PENERIMA MAN/MIN</div>
         <div style="font-size:9pt;color:#71849a;margin-bottom:8px;">Isi daftar penerima. Nomor, nama, nominal, tanda tangan, dan keterangan akan tampil pada dokumen cetak.</div>
-        <div style="display:grid;grid-template-columns:45px minmax(120px,1.7fr) 65px minmax(100px,1fr) minmax(105px,1fr) minmax(120px,1.4fr) minmax(100px,1.2fr) 32px;gap:5px;font-size:8pt;color:#71849a;padding:0 6px;margin-bottom:4px;">
-            <div>Nomor</div><div>Nama</div><div>Jumlah</div><div>Harga Satuan (Rp)</div><div>Total Harga (Rp)</div><div>Tanda Tangan</div><div>Keterangan</div><div></div>
+        <div style="display:grid;grid-template-columns:55px 2fr 1fr 1.5fr 1.5fr 40px;gap:5px;font-size:8pt;color:#71849a;padding:0 6px;margin-bottom:4px;">
+            <div>Nomor</div><div>Nama</div><div>Nominal (Rp)</div><div>Tanda Tangan</div><div>Keterangan</div><div></div>
         </div>
-        <div style="width:100%;overflow-x:auto;padding:2px 1px 6px;">
-            <div id="penerima-manmin-inputs" style="min-width:900px;"></div>
-        </div>
+        <div id="penerima-manmin-inputs"></div>
         <button class="btn btn-green btn-small" onclick="addPenerimaManmin()" style="margin-top:6px;">+ Tambah Penerima MAN/MIN</button>
 
         <div class="form-section-title">6. CATATAN & TERBILANG</div>
@@ -983,7 +976,7 @@ body{background:var(--bg)!important;color:var(--text);}
             <div class="print-doc-list" id="print-doc-list"></div>
             <div class="print-panel-actions">
                 <button type="button" onclick="printSelectedDocuments()" class="panel-print-btn">🖨️ Cetak Dokumen Terpilih</button>
-                <button type="button" onclick="downloadPdf()" class="panel-print-btn" style="background:#176b45;">⬇️ Unduh PDF</button>
+                <button type="button" onclick="downloadPdf()" class="panel-pdf-btn">⬇️ Unduh PDF</button>
             </div>
         </div>
 
@@ -1776,9 +1769,9 @@ body{background:var(--bg)!important;color:var(--text);}
             </div>
         </div>
         <table class="data-table" style="font-size:10pt;margin-top:20px;">
-            <thead><tr><th style="width:45px;">Nomor</th><th>Nama</th><th style="width:65px;">Jumlah</th><th style="width:115px;">Harga Satuan (Rp)</th><th style="width:125px;">Total Harga (Rp)</th><th style="width:130px;">Tanda Tangan</th><th style="width:130px;">Keterangan</th></tr></thead>
+            <thead><tr><th style="width:55px;">Nomor</th><th>Nama</th><th style="width:130px;">Nominal (Rp)</th><th style="width:150px;">Tanda Tangan</th><th style="width:150px;">Keterangan</th></tr></thead>
             <tbody id="out_tabel_penerima_manmin"></tbody>
-            <tfoot><tr><th colspan="4" style="text-align:right;">TOTAL HARGA</th><th id="out_total_penerima_manmin"></th><th colspan="2"></th></tr></tfoot>
+            <tfoot><tr><th colspan="2" style="text-align:right;">TOTAL</th><th id="out_total_penerima_manmin"></th><th colspan="2"></th></tr></tfoot>
         </table>
     </div>
 
@@ -2581,28 +2574,18 @@ body{background:var(--bg)!important;color:var(--text);}
         const div = document.createElement('div');
         div.className = 'belanja-row';
         div.dataset.id = item.id;
-        // Kompatibilitas data lama: jumlah lama dipertahankan sebagai harga satuan dengan volume 1.
-        if (item.volume == null || item.hargaSatuan == null) {
-            item.volume = 1;
-            item.hargaSatuan = Number(item.jumlah) || 0;
-        }
-        item.satuan = item.satuan || '';
-        item.jumlah = (Number(item.volume) || 0) * (Number(item.hargaSatuan) || 0);
         const ppn = item.ppn || 0;
         const pph = item.pph || 0;
         div.innerHTML = `
-            <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleRow(${item.id}, this.checked)" aria-label="Pilih item">
-            <input type="text" value="${esc(item.nama)}" onchange="updateRowName(${item.id}, this.value)" placeholder="Nama Belanja" aria-label="Nama belanja">
-            <select class="belanja-rek-select" data-row-id="${item.id}" onchange="updateRowRekId(${item.id}, this.value)" aria-label="Rekening">
+            <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleRow(${item.id}, this.checked)">
+            <input type="text" value="${esc(item.nama)}" onchange="updateRowName(${item.id}, this.value)" placeholder="Nama Belanja">
+            <select class="belanja-rek-select" data-row-id="${item.id}" onchange="updateRowRekId(${item.id}, this.value)">
                 ${getRekeningOptions(item.rekId)}
             </select>
-            <input type="number" min="0" step="any" value="${Number(item.volume)||0}" onchange="updateRowVolume(${item.id}, this.value)" placeholder="Vol." title="Volume atau jumlah barang">
-            <input type="text" value="${esc(item.satuan || '')}" onchange="updateRowSatuan(${item.id}, this.value)" placeholder="Paket/box" title="Satuan barang, misalnya paket, box, pcs, atau unit">
-            <input type="number" min="0" step="any" value="${Number(item.hargaSatuan)||0}" onchange="updateRowHargaSatuan(${item.id}, this.value)" placeholder="Harga satuan" title="Harga per satuan barang (Rp)">
-            <input type="number" value="${item.jumlah}" readonly placeholder="Total" title="Total otomatis = volume × harga satuan" style="background:#edf3f8!important;font-weight:bold">
+            <input type="number" value="${item.jumlah}" onchange="updateRowAmount(${item.id}, this.value)" placeholder="Bruto" title="Jumlah Bruto">
             <input type="number" class="pajak-input" value="${ppn}" onchange="updateRowPpn(${item.id}, this.value)" placeholder="PPN" title="PPN">
             <input type="number" class="pajak-input" value="${pph}" onchange="updateRowPph(${item.id}, this.value)" placeholder="PPH" title="PPH">
-            <button onclick="removeRow(${item.id})" aria-label="Hapus item" style="background:#e74c3c; color:white; border:none; height:25px; border-radius:3px; cursor:pointer; font-size:11px;">X</button>
+            <button onclick="removeRow(${item.id})" style="background:#e74c3c; color:white; border:none; height:25px; border-radius:3px; cursor:pointer; font-size:11px;">X</button>
         `;
         return div;
     }
@@ -2703,37 +2686,9 @@ body{background:var(--bg)!important;color:var(--text);}
         const item = belanjaItems.find(i => i.id === id);
         if (item) { item.rekId = val; isDirty = true; saveBelanjaLocal(); updateSurat(); }
     }
-    function updateRowSatuan(id, val) {
-        const item = belanjaItems.find(i => i.id === id);
-        if (item) { item.satuan = String(val || '').trim(); isDirty = true; saveBelanjaLocal(); updateSurat(); }
-    }
-    function updateRowVolume(id, val) {
-        const item = belanjaItems.find(i => i.id === id);
-        if (item) {
-            if (item.hargaSatuan == null) item.hargaSatuan = Number(item.jumlah) || 0;
-            item.volume = Math.max(0, Number(val) || 0);
-            item.jumlah = item.volume * (Number(item.hargaSatuan) || 0);
-            isDirty = true; saveBelanjaLocal(); renderEditorRows(); updateSurat();
-        }
-    }
-    function updateRowHargaSatuan(id, val) {
-        const item = belanjaItems.find(i => i.id === id);
-        if (item) {
-            if (item.volume == null) item.volume = 1;
-            item.hargaSatuan = Math.max(0, Number(val) || 0);
-            item.jumlah = (Number(item.volume) || 0) * item.hargaSatuan;
-            isDirty = true; saveBelanjaLocal(); renderEditorRows(); updateSurat();
-        }
-    }
-    // Kompatibilitas pemanggilan lama: nilai bruto dianggap harga satuan untuk volume 1.
     function updateRowAmount(id, val) {
         const item = belanjaItems.find(i => i.id === id);
-        if (item) {
-            item.volume = 1;
-            item.hargaSatuan = Math.max(0, Number(val) || 0);
-            item.jumlah = item.hargaSatuan;
-            isDirty = true; saveBelanjaLocal(); renderEditorRows(); updateSurat();
-        }
+        if (item) { item.jumlah = parseInt(val) || 0; isDirty = true; saveBelanjaLocal(); updateTotals(); updateSurat(); }
     }
     function updateRowPpn(id, val) {
         const item = belanjaItems.find(i => i.id === id);
@@ -2751,7 +2706,7 @@ body{background:var(--bg)!important;color:var(--text);}
         updateSurat();
     }
     function addManualRow() {
-        belanjaItems.push({ id: nextId++, nama: 'Item Baru', volume: 1, satuan: '', hargaSatuan: 0, jumlah: 0, ppn: 0, pph: 0, rekId: "", checked: true, ket: '' });
+        belanjaItems.push({ id: nextId++, nama: 'Item Baru', jumlah: 0, ppn: 0, pph: 0, rekId: "", checked: true, ket: '' });
         isDirty = true;
         saveBelanjaLocal();
         renderEditorRows();
@@ -2783,16 +2738,16 @@ body{background:var(--bg)!important;color:var(--text);}
                 if (match) {
                     const name = line.substring(0, line.lastIndexOf(match[1])).trim();
                     const amount = parseInt(match[1].replace(/[.,]/g, '')) || 0;
-                    if (name && amount > 0) newItems.push({ nama: name, volume: 1, hargaSatuan: amount, jumlah: amount, ket: name });
+                    if (name && amount > 0) newItems.push({ nama: name, jumlah: amount, ket: name });
                 }
             } else {
                 const name = parts[0].trim();
                 const amount = parseInt(parts[parts.length-1].replace(/[^\d]/g, '')) || 0;
-                if (name && amount > 0) newItems.push({ nama: name, volume: 1, hargaSatuan: amount, jumlah: amount, ket: name });
+                if (name && amount > 0) newItems.push({ nama: name, jumlah: amount, ket: name });
             }
         });
         // Hasil paste langsung mengganti rincian belanja bulan aktif & tersimpan otomatis
-        belanjaItems = newItems.map(d => ({ id: nextId++, nama: d.nama, volume: d.volume || 1, hargaSatuan: d.hargaSatuan ?? d.jumlah, jumlah: d.jumlah, ppn: 0, pph: 0, rekId: 1, checked: true, ket: d.ket }));
+        belanjaItems = newItems.map(d => ({ id: nextId++, nama: d.nama, jumlah: d.jumlah, ppn: 0, pph: 0, rekId: 1, checked: true, ket: d.ket }));
         isDirty = true;
         saveBelanjaLocal();
         renderEditorRows();
@@ -2914,11 +2869,7 @@ body{background:var(--bg)!important;color:var(--text);}
         const hari = gv('in_hari');
         const tglTerima = gv('in_tgl_terima');
         const items = belanjaItems.filter(i => i.checked);
-        const total = items.reduce((a, b) => a + (Number(b.volume ?? 1) * Number(b.hargaSatuan ?? b.jumlah)), 0);
-        const vol = it => Number(it.volume ?? 1);
-        const satuan = it => esc(it.satuan || '');
-        const harga = it => Number(it.hargaSatuan ?? it.jumlah);
-        const bruto = it => vol(it) * harga(it);
+        const total = items.reduce((a, b) => a + b.jumlah, 0);
         const terbilang = gv('in_terbilang') || angkaKeTerbilang(total);
         const noSp = gv('in_no_po');
         const noInv = gv('in_no_invoice');
@@ -2956,8 +2907,8 @@ body{background:var(--bg)!important;color:var(--text);}
         // ============ 2. DOKUMEN HASIL PEMBANDINGAN ============
         let bandingHtml = '';
         items.forEach(it => {
-            const hargaI = Math.round(harga(it) * 1.06 / 100) * 100;   // Produk I (lebih mahal)
-            const hargaII = harga(it);                                  // Produk II (dipilih)
+            const hargaI = Math.round(it.jumlah * 1.06 / 100) * 100;   // Produk I (lebih mahal)
+            const hargaII = it.jumlah;                                  // Produk II (dipilih)
             bandingHtml += '<table class="data-table" style="margin-bottom:14px; font-size:9pt;">' +
                 '<thead><tr><th width="170">Uraian</th><th>Produk I</th><th>Produk II</th><th width="70">Ket</th></tr></thead><tbody>' +
                 '<tr><td style="text-align:left">Nama Calon Penyedia</td><td>' + esc(v2) + '</td><td><b>' + esc(dipilih) + '</b></td><td></td></tr>' +
@@ -2975,10 +2926,10 @@ body{background:var(--bg)!important;color:var(--text);}
         // ============ 3. DOKUMEN HASIL NEGOSIASI ============
         let neg = '', totNeg = 0, totNegAwal = 0;
         items.forEach((it, idx) => {
-            const hawal = Math.round(harga(it) * 1.1 / 100) * 100;
-            totNegAwal += hawal * vol(it); totNeg += bruto(it);
+            const hawal = Math.round(it.jumlah * 1.1 / 100) * 100;
+            totNegAwal += hawal; totNeg += it.jumlah;
             neg += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td>1</td>' +
-                '<td>' + fmtNumber(hawal) + ',-</td><td>' + fmtNumber(harga(it)) + ',-</td><td style="text-align:left">Disepakati</td></tr>';
+                '<td>' + fmtNumber(hawal) + ',-</td><td>' + fmtNumber(it.jumlah) + ',-</td><td style="text-align:left">Disepakati</td></tr>';
         });
         setBody('out_tabel_negosiasi', neg, 6);
         set('total_neg_awal', fmtNumber(totNegAwal) + ',-');
@@ -2993,8 +2944,8 @@ body{background:var(--bg)!important;color:var(--text);}
         set('spj_ttd_pihak2', dipilih); set('spj_tgl_selesai', tglTerima);
         let spj = '';
         items.forEach((it, idx) => {
-            spj += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td>' + fmtNumber(vol(it)) + '</td><td>' + satuan(it) + '</td>' +
-                '<td>' + fmtNumber(harga(it)) + ',-</td><td>' + fmtNumber(bruto(it)) + ',-</td></tr>';
+            spj += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td>1</td><td>Paket</td>' +
+                '<td>' + fmtNumber(it.jumlah) + ',-</td><td>' + fmtNumber(it.jumlah) + ',-</td></tr>';
         });
         setBody('out_tabel_spj', spj, 6);
         set('total_spj', fmtNumber(total) + ',-'); set('terbilang_spj', terbilang);
@@ -3005,8 +2956,8 @@ body{background:var(--bg)!important;color:var(--text);}
         set('sp_tgl_terima', tglTerima); set('out_tgl_sp', tgl);
         let sp = '';
         items.forEach((it, idx) => {
-            sp += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td>' + fmtNumber(vol(it)) + '</td><td>' + satuan(it) + '</td>' +
-                '<td>' + fmtNumber(harga(it)) + ',-</td><td>' + fmtNumber(bruto(it)) + ',-</td></tr>';
+            sp += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td>1</td><td>Paket</td>' +
+                '<td>' + fmtNumber(it.jumlah) + ',-</td><td>' + fmtNumber(it.jumlah) + ',-</td></tr>';
         });
         setBody('out_tabel_sp', sp, 6);
         set('total_sp', fmtNumber(total) + ',-'); set('total_sp_all', fmtNumber(total) + ',-'); set('terbilang_sp', terbilang);
@@ -3017,8 +2968,8 @@ body{background:var(--bg)!important;color:var(--text);}
         set('spk_waktu', tgl); set('spk_selesai', tglTerima); set('spk_ttd', dipilih);
         let spk = '';
         items.forEach((it, idx) => {
-            spk += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td style="text-align:left">' + fmtNumber(vol(it)) + ' ' + satuan(it) + '</td>' +
-                '<td>' + fmtNumber(harga(it)) + ',-</td><td>' + fmtNumber(bruto(it)) + ',-</td></tr>';
+            spk += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td style="text-align:left">1 Paket</td>' +
+                '<td>' + fmtNumber(it.jumlah) + ',-</td><td>' + fmtNumber(it.jumlah) + ',-</td></tr>';
         });
         setBody('out_tabel_spk', spk, 5);
         set('total_spk', fmtNumber(total) + ',-'); set('terbilang_spk', terbilang);
@@ -3030,7 +2981,7 @@ body{background:var(--bg)!important;color:var(--text);}
         set('shp_telp', gv('in_telp_sekolah')); set('shp_ttd_penyedia', dipilih);
         let shp = '';
         items.forEach((it, idx) => {
-            shp += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td>' + fmtNumber(vol(it)) + ' ' + satuan(it) + '</td>' +
+            shp += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td>1 Paket</td>' +
                 '<td>Sesuai</td><td>Baik</td></tr>';
         });
         setBody('out_tabel_shp', shp, 5);
@@ -3043,8 +2994,8 @@ body{background:var(--bg)!important;color:var(--text);}
         set('ba_no_sp', noSp); set('ba_tgl_sp', tgl); set('ba_mulai', tgl); set('ba_sampai', tglTerima);
         let ba = '';
         items.forEach(it => {
-            ba += '<tr><td style="text-align:left">' + esc(it.nama) + '</td><td>' + fmtNumber(vol(it)) + '</td><td>' + satuan(it) + '</td>' +
-                '<td>' + fmtNumber(harga(it)) + ',-</td><td>' + fmtNumber(bruto(it)) + ',-</td><td>Sesuai</td></tr>';
+            ba += '<tr><td style="text-align:left">' + esc(it.nama) + '</td><td>1</td><td>Paket</td>' +
+                '<td>' + fmtNumber(it.jumlah) + ',-</td><td>' + fmtNumber(it.jumlah) + ',-</td><td>Sesuai</td></tr>';
         });
         setBody('out_tabel_ba', ba, 6);
         set('total_ba', fmtNumber(total) + ',-');
@@ -3074,18 +3025,7 @@ body{background:var(--bg)!important;color:var(--text);}
 
     function loadPenerimaManmin() {
         try { penerimaManminList = JSON.parse(localStorage.getItem('si_penerima_manmin') || '[]'); } catch (e) { penerimaManminList = []; }
-        // Migrasi data lama: nominal sebelumnya dianggap sebagai total harga.
-        penerimaManminList = penerimaManminList.map(function(p) {
-            const jumlah = Math.max(0, Number(p.jumlah == null ? 1 : p.jumlah) || 0);
-            const hargaSatuan = Math.max(0, Number(p.hargaSatuan) || 0);
-            const totalLama = Math.max(0, Number(p.totalHarga == null ? p.nominal : p.totalHarga) || 0);
-            return { nomor: p.nomor || '', nama: p.nama || '', jumlah: jumlah,
-                hargaSatuan: hargaSatuan || (jumlah ? Math.round(totalLama / jumlah) : 0),
-                totalHarga: hargaSatuan ? jumlah * hargaSatuan : totalLama,
-                tandaTangan: p.tandaTangan || '', keterangan: p.keterangan || '' };
-        });
-        if (!penerimaManminList.length) penerimaManminList.push({ nomor: '1', nama: '', jumlah: 1, hargaSatuan: 0, totalHarga: 0, tandaTangan: '', keterangan: '' });
-        savePenerimaManmin();
+        if (!penerimaManminList.length) penerimaManminList.push({ nomor: '1', nama: '', nominal: 0, tandaTangan: '', keterangan: '' });
         renderPenerimaManminRows();
     }
     function savePenerimaManmin() {
@@ -3096,40 +3036,30 @@ body{background:var(--bg)!important;color:var(--text);}
         if (!c) return;
         c.innerHTML = '';
         penerimaManminList.forEach(function(p, i) {
-            const jumlah = Math.max(0, Number(p.jumlah) || 0);
-            const hargaSatuan = Math.max(0, Number(p.hargaSatuan) || 0);
-            p.totalHarga = jumlah * hargaSatuan;
             const div = document.createElement('div');
-            div.className = 'rekening-row manmin-row';
-            div.style.gridTemplateColumns = '45px minmax(120px,1.7fr) 65px minmax(100px,1fr) minmax(105px,1fr) minmax(120px,1.4fr) minmax(100px,1.2fr) 32px';
-            div.innerHTML = '<input type="text" value="' + esc(p.nomor || (i + 1)) + '" onchange="updPenerimaManmin(' + i + ',\'nomor\',this.value)" placeholder="No." aria-label="Nomor">' +
-                '<input type="text" value="' + esc(p.nama) + '" onchange="updPenerimaManmin(' + i + ',\'nama\',this.value)" placeholder="Nama penerima" aria-label="Nama penerima">' +
-                '<input type="number" min="0" step="1" value="' + jumlah + '" onchange="updPenerimaManmin(' + i + ',\'jumlah\',this.value)" placeholder="Jumlah" aria-label="Jumlah">' +
-                '<input type="number" min="0" step="any" value="' + hargaSatuan + '" onchange="updPenerimaManmin(' + i + ',\'hargaSatuan\',this.value)" placeholder="Harga satuan" aria-label="Harga satuan (Rp)">' +
-                '<input type="text" readonly value="' + fmtNumber(p.totalHarga) + '" aria-label="Total harga (Rp)" title="Jumlah dikali harga satuan" style="font-weight:700;background:#eaf5ff!important;">' +
-                '<input type="text" value="' + esc(p.tandaTangan) + '" onchange="updPenerimaManmin(' + i + ',\'tandaTangan\',this.value)" placeholder="Nama/ruang tanda tangan" aria-label="Tanda tangan">' +
-                '<input type="text" value="' + esc(p.keterangan) + '" onchange="updPenerimaManmin(' + i + ',\'keterangan\',this.value)" placeholder="Keterangan" aria-label="Keterangan">' +
+            div.className = 'rekening-row';
+            div.style.gridTemplateColumns = '55px 2fr 1fr 1.5fr 1.5fr 40px';
+            div.innerHTML = '<input type="text" value="' + esc(p.nomor || (i + 1)) + '" onchange="updPenerimaManmin(' + i + ',\'nomor\',this.value)" placeholder="Nomor">' +
+                '<input type="text" value="' + esc(p.nama) + '" onchange="updPenerimaManmin(' + i + ',\'nama\',this.value)" placeholder="Nama penerima">' +
+                '<input type="number" min="0" value="' + (Number(p.nominal) || 0) + '" onchange="updPenerimaManmin(' + i + ',\'nominal\',this.value)" placeholder="Nominal">' +
+                '<input type="text" value="' + esc(p.tandaTangan) + '" onchange="updPenerimaManmin(' + i + ',\'tandaTangan\',this.value)" placeholder="Nama/ruang tanda tangan">' +
+                '<input type="text" value="' + esc(p.keterangan) + '" onchange="updPenerimaManmin(' + i + ',\'keterangan\',this.value)" placeholder="Keterangan">' +
                 '<button type="button" onclick="delPenerimaManmin(' + i + ')" style="background:#e74c3c;color:#fff;border:none;height:25px;border-radius:3px;cursor:pointer;">X</button>';
             c.appendChild(div);
         });
     }
     function updPenerimaManmin(i, f, v) {
-        if (f === 'jumlah' || f === 'hargaSatuan') {
-            penerimaManminList[i][f] = Math.max(0, Number(v) || 0);
-            penerimaManminList[i].totalHarga = (Number(penerimaManminList[i].jumlah) || 0) * (Number(penerimaManminList[i].hargaSatuan) || 0);
-            savePenerimaManmin(); renderPenerimaManminRows(); updateSurat(); return;
-        }
-        penerimaManminList[i][f] = f === 'nomor' ? v : v;
+        penerimaManminList[i][f] = f === 'nominal' ? (Number(v) || 0) : v;
         savePenerimaManmin(); updateSurat();
     }
     function addPenerimaManmin() {
-        penerimaManminList.push({ nomor: String(penerimaManminList.length + 1), nama: '', jumlah: 1, hargaSatuan: 0, totalHarga: 0, tandaTangan: '', keterangan: '' });
+        penerimaManminList.push({ nomor: String(penerimaManminList.length + 1), nama: '', nominal: 0, tandaTangan: '', keterangan: '' });
         savePenerimaManmin(); renderPenerimaManminRows(); updateSurat();
     }
     function delPenerimaManmin(i) {
         penerimaManminList.splice(i, 1);
         penerimaManminList.forEach(function(p, idx) { if (!p.nomor) p.nomor = String(idx + 1); });
-        if (!penerimaManminList.length) penerimaManminList.push({ nomor: '1', nama: '', jumlah: 1, hargaSatuan: 0, totalHarga: 0, tandaTangan: '', keterangan: '' });
+        if (!penerimaManminList.length) penerimaManminList.push({ nomor: '1', nama: '', nominal: 0, tandaTangan: '', keterangan: '' });
         savePenerimaManmin(); renderPenerimaManminRows(); updateSurat();
     }
     function updatePenerimaManminDocument() {
@@ -3137,10 +3067,8 @@ body{background:var(--bg)!important;color:var(--text);}
         if (!tbody) return;
         let total = 0;
         tbody.innerHTML = penerimaManminList.map(function(p, i) {
-            const jumlah = Math.max(0, Number(p.jumlah) || 0);
-            const hargaSatuan = Math.max(0, Number(p.hargaSatuan) || 0);
-            const totalHarga = jumlah * hargaSatuan; total += totalHarga;
-            return '<tr><td>' + esc(p.nomor || (i + 1)) + '</td><td style="text-align:left;">' + esc(p.nama) + '</td><td>' + fmtNumber(jumlah) + '</td><td style="text-align:right;">' + fmtNumber(hargaSatuan) + '</td><td style="text-align:right;">' + fmtNumber(totalHarga) + '</td><td style="height:48px;">' + esc(p.tandaTangan) + '</td><td style="text-align:left;">' + esc(p.keterangan) + '</td></tr>';
+            const nominal = Number(p.nominal) || 0; total += nominal;
+            return '<tr><td>' + esc(p.nomor || (i + 1)) + '</td><td style="text-align:left;">' + esc(p.nama) + '</td><td style="text-align:right;">' + fmtNumber(nominal) + '</td><td style="height:48px;">' + esc(p.tandaTangan) + '</td><td style="text-align:left;">' + esc(p.keterangan) + '</td></tr>';
         }).join('');
         const totalEl = document.getElementById('out_total_penerima_manmin');
         if (totalEl) totalEl.textContent = fmtNumber(total);
@@ -3315,7 +3243,7 @@ body{background:var(--bg)!important;color:var(--text);}
         set('bast_ttd_pihak2', pNama);
         let bH = '';
         items.forEach(function(it, idx) {
-            bH += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td>' + fmtNumber(vol(it)) + '</td><td>' + satuan(it) + '</td><td>' + fmtNumber(harga(it)) + ',-</td><td>' + fmtNumber(bruto(it)) + ',-</td></tr>';
+            bH += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td>1</td><td>Paket</td><td>' + fmtNumber(it.jumlah) + ',-</td><td>' + fmtNumber(it.jumlah) + ',-</td></tr>';
         });
         setH('out_tabel_bast', bH || '<tr><td colspan="6" style="color:#999; padding:10px;">Belum ada item terceklis.</td></tr>');
         set('total_bast', fmtNumber(total) + ',-');
@@ -3332,7 +3260,7 @@ body{background:var(--bg)!important;color:var(--text);}
         set('nota_tgl_ttd', tgl);
         let nH = '';
         items.forEach(function(it, idx) {
-            nH += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td>1</td><td>' + fmtNumber(harga(it)) + ',-</td><td>' + fmtNumber(bruto(it)) + ',-</td></tr>';
+            nH += '<tr><td>' + (idx + 1) + '</td><td style="text-align:left">' + esc(it.nama) + '</td><td>1</td><td>' + fmtNumber(it.jumlah) + ',-</td><td>' + fmtNumber(it.jumlah) + ',-</td></tr>';
         });
         setH('out_tabel_nota', nH || '<tr><td colspan="5" style="color:#999; padding:10px;">Belum ada item terceklis.</td></tr>');
         set('total_nota', fmtNumber(total) + ',-');
@@ -3535,32 +3463,12 @@ body{background:var(--bg)!important;color:var(--text);}
 
     function renderPrintDocumentSelector() {
         const box = document.getElementById('print-doc-list');
-        if (!box) {
-            console.error('Panel cetak: elemen #print-doc-list tidak ditemukan.');
-            return;
-        }
-        box.replaceChildren();
-        if (!Array.isArray(PRINT_DOCUMENTS) || PRINT_DOCUMENTS.length === 0) {
-            box.innerHTML = '<div style="padding:10px;color:#b42318;background:#fff1f0;border:1px solid #ffccc7;border-radius:8px;">Daftar dokumen belum berhasil dimuat. Tutup panel, muat ulang halaman, lalu coba kembali.</div>';
-            return;
-        }
-        PRINT_DOCUMENTS.forEach(function(d) {
-            const label = document.createElement('label');
-            label.className = 'print-doc-item';
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.className = 'print-doc-check';
-            checkbox.value = d[0];
-            checkbox.addEventListener('change', updatePrintSelectionCount);
-            const span = document.createElement('span');
-            span.textContent = d[1];
-            label.append(checkbox, span);
-            box.appendChild(label);
-        });
-        box.style.display = 'flex';
-        box.style.flexDirection = 'column';
-        box.style.visibility = 'visible';
-        box.style.minHeight = '40px';
+        if (!box) return;
+        box.innerHTML = PRINT_DOCUMENTS.map(function(d) {
+            return '<label class="print-doc-item">' +
+                '<input type="checkbox" class="print-doc-check" value="' + d[0] + '" onchange="updatePrintSelectionCount()">' +
+                '<span>' + d[1] + '</span></label>';
+        }).join('');
         updatePrintSelectionCount();
     }
 
@@ -3641,11 +3549,17 @@ body{background:var(--bg)!important;color:var(--text);}
         const ids = validateSelectedDocuments();
         if (!ids) return;
 
-        // Salin semua stylesheet agar dokumen hasil cetak tidak kehilangan format.
-        const styles = Array.from(document.querySelectorAll('style'))
-            .map(function(node) { return node.outerHTML; }).join('\n');
-        const links = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
-            .map(function(node) { return node.outerHTML; }).join('\n');
+        let docsHtml = '';
+        try {
+            docsHtml = getDocHtml(ids);
+            if (!docsHtml || !docsHtml.trim()) {
+                showStatus('Dokumen tidak berhasil disiapkan. Periksa dokumen yang dipilih.', true);
+                return;
+            }
+        } catch (err) {
+            showStatus('Gagal menyiapkan dokumen: ' + err.message, true);
+            return;
+        }
 
         const w = window.open('', '_blank');
         if (!w) {
@@ -3653,25 +3567,28 @@ body{background:var(--bg)!important;color:var(--text);}
             return;
         }
 
-        const docsHtml = getDocHtml(ids);
+        const styles = Array.from(document.querySelectorAll('style'))
+            .map(function(node) { return node.outerHTML; }).join('\n');
+        const links = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
+            .map(function(node) { return node.outerHTML; }).join('\n');
         const printCss = `
             html, body { background:#fff !important; color:#000 !important; margin:0; padding:0; }
-            body { display:block !important; }
+            body { display:block !important; font-family:"Times New Roman",serif; }
             .container { display:block !important; visibility:visible !important; opacity:1 !important;
                 position:relative !important; width:100% !important; max-width:190mm !important;
-                margin:0 auto !important; box-shadow:none !important; }
+                margin:0 auto !important; padding:8mm !important; box-shadow:none !important; }
             .no-print, button, input, select, textarea, .doc-toolbar { display:none !important; }
-            .container + .container { page-break-before:always !important; break-before:page !important; }
+            .page-break { page-break-after:always !important; break-after:page !important; }
             @page { size:A4 portrait; margin:12mm; }
             @media print {
                 html, body { width:100%; height:auto; }
                 body, body *:not(img):not(svg):not(svg *) {
                     color:#000 !important; -webkit-text-fill-color:#000 !important;
-                    background-image:none !important; text-shadow:none !important; box-shadow:none !important;
+                    text-shadow:none !important; box-shadow:none !important;
                 }
                 .container { page-break-inside:auto; break-inside:auto; }
                 table, thead, tbody, tfoot, tr, th, td { border-color:#000 !important; }
-                img { max-width:100%; -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+                img { max-width:100%; print-color-adjust:exact !important; -webkit-print-color-adjust:exact !important; }
             }`;
 
         w.document.open();
@@ -3683,17 +3600,12 @@ body{background:var(--bg)!important;color:var(--text);}
         w.document.write('</body></html>');
         w.document.close();
 
-        // Tunggu layout dan gambar selesai dimuat sebelum membuka dialog cetak.
-        const triggerPrint = function() {
-            if (w.__printTriggered) return;
-            w.__printTriggered = true;
-            try {
-                w.focus();
-                w.print();
-                showStatus('🖨️ Dialog cetak dibuka untuk ' + ids.length + ' dokumen. Untuk PDF, pilih "Save as PDF/Simpan sebagai PDF" pada pilihan printer.', false);
-            } catch (err) {
-                showStatus('Gagal membuka dialog cetak: ' + err.message, true);
-            }
+        let printStarted = false;
+        const doPrint = function() {
+            if (printStarted || w.closed) return;
+            printStarted = true;
+            w.focus();
+            w.print();
         };
         w.onload = function() {
             const imgs = Array.from(w.document.images || []);
@@ -3703,19 +3615,15 @@ body{background:var(--bg)!important;color:var(--text);}
                     img.onload = resolve;
                     img.onerror = resolve;
                 });
-            })).then(function() { setTimeout(triggerPrint, 700); });
+            })).then(function() { setTimeout(doPrint, 500); });
         };
-        // Fallback untuk browser yang tidak memicu onload pada dokumen kosong yang ditulis ulang.
         setTimeout(function() {
-            if (w && !w.closed && !w.__printTriggered) {
-                triggerPrint();
-            }
-        }, 1800);
-        // Tandai jika dialog cetak mulai dibuka oleh browser.
-        w.addEventListener('beforeprint', function() { w.__printTriggered = true; }, { once:true });
+            if (!w.closed && w.document && w.document.body && w.document.body.children.length) doPrint();
+        }, 1500);
+        showStatus('Dokumen siap dicetak. Jika belum terbuka, pastikan popup diizinkan.', false);
     }
 
-    // Panel dokumen terpilih disembunyikan sampai menu sidebar diklik.
+        // Panel dokumen terpilih disembunyikan sampai menu sidebar diklik.
     function togglePrintSelector(btn) {
         const panel = document.querySelector('.print-selector');
         if (!panel) return;
@@ -3784,70 +3692,5 @@ body{background:var(--bg)!important;color:var(--text);}
     }
 </script>
 
-<style id="print-selector-recovery-style">
-/* Pemulihan panel Cetak Dokumen Terpilih */
-.print-selector.is-open {
-  display:flex !important;
-  flex-direction:column !important;
-  position:fixed !important;
-  top:84px !important;
-  right:18px !important;
-  width:min(390px, calc(100vw - 36px)) !important;
-  max-height:calc(100vh - 100px) !important;
-  overflow:hidden !important;
-  z-index:99999 !important;
-  visibility:visible !important;
-  opacity:1 !important;
-}
-.print-selector.is-open .print-doc-list {
-  display:flex !important;
-  flex-direction:column !important;
-  overflow-y:auto !important;
-  min-height:80px !important;
-  max-height:calc(100vh - 330px) !important;
-  visibility:visible !important;
-}
-@media(max-width:760px) {
-  .print-selector.is-open {
-    top:70px !important; right:8px !important;
-    width:calc(100vw - 86px) !important;
-    max-height:calc(100vh - 80px) !important;
-  }
-}
-</style>
-<script id="print-selector-recovery">
-(function(){
-  function recoverPrintPanel(){
-    const panel=document.querySelector('.print-selector');
-    const list=document.getElementById('print-doc-list');
-    if(!panel) return;
-    if(list && !list.querySelector('.print-doc-check') && typeof renderPrintDocumentSelector==='function'){
-      renderPrintDocumentSelector();
-    }
-  }
-  // Ganti fungsi toggle agar panel selalu terbuka/tertutup dengan benar dan daftar dimuat saat dibuka.
-  window.togglePrintSelector=function(btn){
-    const panel=document.querySelector('.print-selector');
-    if(!panel) { console.error('Panel Cetak Dokumen Terpilih tidak ditemukan.'); return; }
-    const opening=!panel.classList.contains('is-open');
-    if(opening) recoverPrintPanel();
-    panel.classList.toggle('is-open',opening);
-    panel.style.display=opening?'flex':'none';
-    document.querySelectorAll('.side-link').forEach(function(x){x.classList.remove('active');});
-    const trigger=btn || document.getElementById('side-print-toggle');
-    if(opening && trigger) trigger.classList.add('active');
-    if(opening) {
-      panel.setAttribute('aria-hidden','false');
-      const list=document.getElementById('print-doc-list');
-      if(list) list.style.visibility='visible';
-    } else {
-      panel.setAttribute('aria-hidden','true');
-    }
-  };
-  document.addEventListener('DOMContentLoaded',recoverPrintPanel);
-  // In case the app is already loaded when this repair script runs.
-  if(document.readyState!=='loading') recoverPrintPanel();
-})();
-</script>
 </body>
 </html>
